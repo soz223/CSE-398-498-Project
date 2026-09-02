@@ -20,6 +20,8 @@ If something below does not work, a good first move is to ask a coding agent how
 
 Open https://github.com/openai/codex and click **Fork**. Create the fork under your own GitHub account. Keep the default name `codex`.
 
+The repository to fork is the Codex repository above, not this one. This repository only holds the instructions you are reading.
+
 ### 2.2 Add collaborators to your fork
 
 Go to **Settings**, then **Collaborators**, then **Add people**, and add both of us so we can follow your progress:
