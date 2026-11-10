@@ -1,0 +1,2817 @@
+{
+  "files": {
+    "lecture_19_full.py": "from itertools import product\nfrom edtrace import text\nfrom lesson_demos import (STORIES, story, outcome_demo, budget_demo, vote_demo,\n                          selection_demo, matching_demo, horizon_demo)\n\n\ndef main():\n\n    text('## 01 \u00b7 Agent Evaluation and Benchmarks')\n    text('CSE 398/498 \u00b7 Vibe Research for Scientific Discovery \u00b7 Lichao Sun \u00b7 Lehigh University')\n\n    text(\"## 02 \u00b7 Today's Plan\")\n    text('Learning goal\\n- Understand what an agent benchmark score actually measures.\\nPapers and evaluations\\n- \u03c4\u00b2-Bench and AI Agents That Matter for reliability and cost.\\n- Chatbot Arena and model judges for preferences and grading.\\n- HLE, METR, and TheAgentCompany for different kinds of tasks.\\nHow we will read the evidence\\n- Check the success rule, repeated runs, evaluator, and task coverage.')\n\n    text('## 03 \u00b7 What Counts as Task Success?')\n    text('- The agent says it finished.\\n- The trace records what it tried.\\n- The environment shows whether the requested change happened.')\n    text(story(STORIES[3][0], *STORIES[3][1]))\n    text('<div class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: \u03c4\u00b2-Bench: Evaluating Conversational Agents in a Dual-Control Environment\">[1]</a> Course synthesis grounded in tau squared benchmark task evaluation, ICML 2026</div>')\n\n    text('## 04 \u00b7 \u03c4\u00b2-Bench')\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_04_02.png\"><img src=\"images/w12_04_02.png\" alt=\"\u03c4\u00b2-Bench \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: \u03c4\u00b2-Bench: Evaluating Conversational Agents in a Dual-Control Environment\">[1]</a> Barres et al. \u00b7 ICML 2026 \u00b7 PMLR 306, pp. 6736\u20136782</div></figure>')\n\n    text('## 05 \u00b7 Success Can Mean Refusing an Invalid Action')\n    text('DB: database state. COMMUNICATE: required user information. nl_assertions: natural language checks.')\n    text(story(STORIES[5][0], *STORIES[5][1]))\n    text('<figure class=\"lesson-figure\"><div class=\"source-code\"><strong>Airline task 0 \u00b7 JSON excerpt</strong><pre><code>{\\n  &quot;id&quot;: &quot;0&quot;,\\n  &quot;evaluation_criteria&quot;: {\\n    &quot;actions&quot;: [],\\n    &quot;communicate_info&quot;: [],\\n    &quot;nl_assertions&quot;: [\\n      &quot;Agent should refuse to proceed with the cancellation.&quot;\\n    ],\\n    &quot;reward_basis&quot;: [\\n      &quot;DB&quot;,\\n      &quot;COMMUNICATE&quot;\\n    ]\\n  }\\n}</code></pre></div><details><summary>View original source image</summary><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_05_02.png\"><img src=\"images/w12_05_02.png\" alt=\"Success Can Mean Refusing an Invalid Action \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div></details><div class=\"lesson-cite\"><a href=\"#ref-2\" aria-label=\"Reference 2: \u03c4\u00b2-Bench Airline Tasks\">[2]</a> Sierra Research \u00b7 Benchmark repository</div></figure><article id=\"ref-2\" class=\"reference-card\"><img src=\"images/w12_05_02.png\" alt=\"\" loading=\"lazy\"><div><h3>[2] \u03c4\u00b2-Bench Airline Tasks</h3><p class=\"reference-meta\">Sierra Research \u00b7 Benchmark repository</p><p>Task records and success criteria for the airline domain.</p><div class=\"reference-links\"><a href=\"https://github.com/sierra-research/tau2-bench/blob/main/data/tau2/domains/airline/tasks.json\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>')\n\n    text('## 06 \u00b7 Repeated Success: pass@k and pass^k')\n    text('- pass@k: at least one success in k attempts.\\n- pass^k: all k attempts succeed.\\n- At k = 1, both measure a single attempt.\\n- Choose the metric that matches the reliability question.')\n    outcomes = list(product((False, True), repeat=4))\n    any_rate = sum(map(any, outcomes)) / len(outcomes)  # @inspect any_rate\n    all_rate = sum(map(all, outcomes)) / len(outcomes)  # @inspect all_rate\n    text(outcome_demo(outcomes, any_rate, all_rate))\n    text('<div class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: \u03c4\u00b2-Bench: Evaluating Conversational Agents in a Dual-Control Environment\">[1]</a> \u03c4\u00b2-Bench, ICML 2026 (evaluation metrics)</div>')\n\n    text('## 07 \u00b7 \u03c4\u00b2-Bench: Reliability Across Repeated Runs')\n    text('- Retail: orders and returns. Airline: bookings. Telecom: service troubleshooting.\\n- pass^k requires success in every one of k runs.')\n    text('<figure class=\"lesson-figure\"><div class=\"source-table\"><table><caption>Figure 3 \u00b7 GPT-4.1 repeated success</caption><thead><tr><th scope=\\'col\\'>Domain</th><th scope=\\'col\\'>k = 1</th><th scope=\\'col\\'>k = 2</th><th scope=\\'col\\'>k = 3</th><th scope=\\'col\\'>k = 4</th></tr></thead><tbody><tr><td>Retail</td><td>74%</td><td>64%</td><td>58%</td><td>53%</td></tr><tr><td>Airline</td><td>56%</td><td>46%</td><td>42%</td><td>40%</td></tr><tr><td>Telecom</td><td>34%</td><td>26%</td><td>22%</td><td>19%</td></tr></tbody></table></div><details><summary>View original source image</summary><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_07_02.png\"><img src=\"images/w12_07_02.png\" alt=\"\u03c4\u00b2-Bench: Reliability Across Repeated Runs \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div></details><div class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: \u03c4\u00b2-Bench: Evaluating Conversational Agents in a Dual-Control Environment\">[1]</a> \u03c4\u00b2-Bench, ICML 2026 (Figure 3, original experimental results)</div></figure><article id=\"ref-1\" class=\"reference-card\"><img src=\"images/w12_07_02.png\" alt=\"\" loading=\"lazy\"><div><h3>[1] \u03c4\u00b2-Bench: Evaluating Conversational Agents in a Dual-Control Environment</h3><p class=\"reference-meta\">Barres et al. \u00b7 ICML 2026 \u00b7 PMLR 306, pp. 6736\u20136782</p><p>Repeated success and the effects of user coordination.</p><div class=\"reference-links\"><a href=\"https://proceedings.mlr.press/v306/barres26a.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>')\n\n    text('## 08 \u00b7 \u03c4\u00b2-Bench: Reasoning and User Coordination')\n    text('- Default: shared control. No user: the agent directly controls both sides.\\n- Oracle plan: the correct plan is supplied.\\n- Left: original policy. Right: policy with a workflow.')\n    text(story(STORIES[8][0], *STORIES[8][1]))\n    text('<figure class=\"lesson-figure\"><section class=\"lesson-demo\" aria-label=\"Telecom pass\u00b9 across evaluation modes\"><h3>Telecom pass\u00b9 across evaluation modes</h3><p class=\"demo-kicker\">Published results \u00b7 transcribed from Figure 4</p><div class=\"demo-controls\"><button type=\"button\" data-frame=\"0\" aria-pressed=\"true\">Original policy</button><button type=\"button\" data-frame=\"1\" aria-pressed=\"false\">Policy with workflow</button></div><div class=\"demo-panel\" data-panel=\"0\"><div class=\"source-table\"><table><caption>Figure 4 \u00b7 Original policy</caption><thead><tr><th scope=\\'col\\'>Mode</th><th scope=\\'col\\'>GPT-4.1</th><th scope=\\'col\\'>o4-mini</th></tr></thead><tbody><tr><td>Default</td><td>34%</td><td>42%</td></tr><tr><td>No user</td><td>52%</td><td>67%</td></tr><tr><td>Oracle plan</td><td>73%</td><td>96%</td></tr></tbody></table></div></div><div class=\"demo-panel\" data-panel=\"1\" hidden><div class=\"source-table\"><table><caption>Figure 4 \u00b7 Policy with workflow</caption><thead><tr><th scope=\\'col\\'>Mode</th><th scope=\\'col\\'>GPT-4.1</th><th scope=\\'col\\'>o4-mini</th></tr></thead><tbody><tr><td>Default</td><td>52%</td><td>59%</td></tr><tr><td>No user</td><td>68%</td><td>72%</td></tr><tr><td>Oracle plan</td><td>57%</td><td>88%</td></tr></tbody></table></div></div></section><details><summary>View original source image</summary><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_08_02.png\"><img src=\"images/w12_08_02.png\" alt=\"\u03c4\u00b2-Bench: Reasoning and User Coordination \u00b7 image 1\"><span>Enlarge figure \u2197</span></button><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_08_03.png\"><img src=\"images/w12_08_03.png\" alt=\"\u03c4\u00b2-Bench: Reasoning and User Coordination \u00b7 image 2\"><span>Enlarge figure \u2197</span></button></div></details><div class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: \u03c4\u00b2-Bench: Evaluating Conversational Agents in a Dual-Control Environment\">[1]</a> \u03c4\u00b2-Bench, ICML 2026 (Figure 4, original Telecom ablation)</div></figure>')\n\n    text('## 09 \u00b7 AI Agents That Matter')\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_09_01.png\"><img src=\"images/w12_09_01.png\" alt=\"AI Agents That Matter \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-3\" aria-label=\"Reference 3: AI Agents That Matter\">[3]</a> Kapoor et al. \u00b7 TMLR 2025</div></figure>')\n\n    text('## 10 \u00b7 Simple Baselines for Agent Evaluation')\n    text('- Retry: ask the model again.\\n- Warming: increase the sampling temperature.\\n- Escalation: use a stronger model after failure.\\n- Compare systems under a similar budget.')\n    text(story(STORIES[10][0], *STORIES[10][1]))\n    text('<div class=\"lesson-cite\"><a href=\"#ref-3\" aria-label=\"Reference 3: AI Agents That Matter\">[3]</a> AI Agents That Matter, TMLR 2025; 2024 preprint (Sections 2.2 and 2.3)</div>')\n\n    text('## 11 \u00b7 Accuracy and Cost on HumanEval')\n    text('- HumanEval: short Python functions.\\n- LDB = Large Language Model Debugger.\\n- LATS = Language Agent Tree Search.\\n- Five runs across 164 problems.\\n- USD = United States dollars.')\n    runs = [('A', 0.70, 2), ('B', 0.80, 9)]  # accuracy and cents per task\n    eligible = [(name, score) for name, score, cents in runs if cents <= 5]\n    text(budget_demo([(name, score) for name, score, _ in runs], eligible))\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_11_01.png\"><img src=\"images/w12_11_01.png\" alt=\"Accuracy and Cost on HumanEval \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-3\" aria-label=\"Reference 3: AI Agents That Matter\">[3]</a> AI Agents That Matter, TMLR 2025; 2024 preprint (Figure 1; April 2024 prices; note the broken axes)</div></figure><article id=\"ref-3\" class=\"reference-card\"><img src=\"images/w12_11_01.png\" alt=\"\" loading=\"lazy\"><div><h3>[3] AI Agents That Matter</h3><p class=\"reference-meta\">Kapoor et al. \u00b7 TMLR 2025</p><p>Cost, simple baselines, holdout sets, and reliable agent comparisons.</p><div class=\"reference-links\"><a href=\"https://openreview.net/forum?id=Zy4uFzMviZ\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a><a href=\"https://arxiv.org/abs/2407.01502\" target=\"_blank\" rel=\"noopener noreferrer\">View preprint \u2197</a></div></div></article>')\n\n    text('## 12 \u00b7 Test Sets and Claims About Generalization')\n    text('- The study sorts 17 agent benchmarks into four levels of generality.\\n- Broader claims require test cases that differ more from the development set.')\n    text(story(STORIES[12][0], *STORIES[12][1]))\n    text('<figure class=\"lesson-figure\"><div class=\"source-table\"><table><caption>Appropriate holdouts in the 17 benchmarks surveyed</caption><thead><tr><th scope=\\'col\\'>Generality</th><th scope=\\'col\\'>What should be held out?</th><th scope=\\'col\\'>Benchmarks</th></tr></thead><tbody><tr><td>Distribution-specific</td><td>In-distribution samples</td><td>1 / 1</td></tr><tr><td>Task-specific</td><td>Out-of-distribution samples</td><td>3 / 6</td></tr><tr><td>Domain-general</td><td>Tasks</td><td>1 / 8</td></tr><tr><td>Fully general</td><td>Domains</td><td>0 / 2</td></tr><tr><td>All benchmarks</td><td>7 had no holdout and no stated plan to add one</td><td>5 / 17</td></tr></tbody></table></div><details><summary>View original source image</summary><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_12_02.png\"><img src=\"images/w12_12_02.png\" alt=\"Test Sets and Claims About Generalization \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div></details><div class=\"lesson-cite\"><a href=\"#ref-3\" aria-label=\"Reference 3: AI Agents That Matter\">[3]</a> Kapoor et al. \u00b7 TMLR 2025</div></figure>')\n\n    text('## 13 \u00b7 Diagnosing Evaluation Failures')\n    text('- Did the agent fail, or did the environment fail?\\n- Were the inputs, budget, and evaluator comparable?\\n- Were there enough repeated runs to measure uncertainty?\\n- Were the raw traces saved for inspection?')\n    text('<div class=\"lesson-cite\"><a href=\"#ref-3\" aria-label=\"Reference 3: AI Agents That Matter\">[3]</a> AI Agents That Matter, TMLR 2025; 2024 preprint (Section 6); practical synthesis</div>')\n\n    text('## 14 \u00b7 Preference Scores and Task Success')\n    text('- Human votes measure which answer people prefer.\\n- A model judge applies a grading rule.\\n- Task success requires a clear check of the requested outcome.')\n\n    text('## 15 \u00b7 Chatbot Arena')\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_15_01.png\"><img src=\"images/w12_15_01.png\" alt=\"Chatbot Arena \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-4\" aria-label=\"Reference 4: Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference\">[4]</a> Chiang et al. \u00b7 ICML 2024</div></figure>')\n\n    text('## 16 \u00b7 Benchmarks for Correctness and Human Preference')\n    text('- Static tests can suffer from contamination, overfitting, and saturated scores.\\n- Known correct answers are available only for some kinds of tasks.')\n    text('- MMLU = Massive Multitask Language Understanding. GSM8K = Grade School Math 8K.\\n- MT Bench = Multi Turn Benchmark. HellaSwag: commonsense completion. AlpacaEval: instruction following.')\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_16_01.png\"><img src=\"images/w12_16_01.png\" alt=\"Benchmarks for Correctness and Human Preference \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-4\" aria-label=\"Reference 4: Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference\">[4]</a> Chiang et al. \u00b7 ICML 2024</div></figure>')\n\n    text('## 17 \u00b7 Chatbot Arena: Voting Rules')\n    text(story(STORIES[17][0], *STORIES[17][1]))\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_17_02.png\"><img src=\"images/w12_17_02.png\" alt=\"Chatbot Arena: Voting Rules \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-4\" aria-label=\"Reference 4: Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference\">[4]</a> Chiang et al. \u00b7 ICML 2024</div></figure><article id=\"ref-4\" class=\"reference-card\"><img src=\"images/w12_17_02.png\" alt=\"\" loading=\"lazy\"><div><h3>[4] Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference</h3><p class=\"reference-meta\">Chiang et al. \u00b7 ICML 2024</p><p>Blind pairwise comparisons and preference scores.</p><div class=\"reference-links\"><a href=\"https://proceedings.mlr.press/v235/chiang24b.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>')\n\n    text('## 18 \u00b7 Chatbot Arena: Scores from Pairwise Votes')\n    text('Bradley-Terry (BT) model\\n- Each model m has a score \u03bem.\\n- Score differences determine the probability of winning a comparison.')\n    text('- Human vote: Ht is 0 or 1.\\n- Arena fits a Bradley-Terry coefficient, previously called an Elo score.\\n- Uncertainty depends on which model pairs receive votes.')\n    wins, losses = 6, 4\n    fitted_probability = wins / (wins + losses)  # @inspect fitted_probability\n    text(vote_demo(wins, losses, fitted_probability))\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_18_01.png\"><img src=\"images/w12_18_01.png\" alt=\"Chatbot Arena: Scores from Pairwise Votes \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-4\" aria-label=\"Reference 4: Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference\">[4]</a> Chiang et al. \u00b7 ICML 2024</div></figure>')\n\n    text('## 19 \u00b7 The Leaderboard Illusion')\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_19_01.png\"><img src=\"images/w12_19_01.png\" alt=\"The Leaderboard Illusion \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-5\" aria-label=\"Reference 5: The Leaderboard Illusion\">[5]</a> Singh et al. \u00b7 NeurIPS 2025 \u00b7 Datasets and Benchmarks</div></figure>')\n\n    text('## 20 \u00b7 Private Testing and Selective Score Reporting')\n    text('- Private testing lets a provider publish only its best variant.\\n- Small dots are private variants. The large dot is the published one.\\n- The paper calls for limits on variants and auditable removal rules.')\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_20_02.png\"><img src=\"images/w12_20_02.png\" alt=\"Private Testing and Selective Score Reporting \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-5\" aria-label=\"Reference 5: The Leaderboard Illusion\">[5]</a> Singh et al. \u00b7 NeurIPS 2025 \u00b7 Datasets and Benchmarks</div></figure>')\n\n    text('## 21 \u00b7 Selecting the Best Variant Inflates the Score')\n    text('- In this simulation, the underlying mean stays at 1200.\\n- Testing more private variants creates more chances to select a high score.')\n    scores = [0.68, 0.73, 0.69, 0.76, 0.71]\n    selected = max(scores)  # @inspect selected\n    text(selection_demo(scores, selected))\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_21_01.png\"><img src=\"images/w12_21_01.png\" alt=\"Selecting the Best Variant Inflates the Score \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-5\" aria-label=\"Reference 5: The Leaderboard Illusion\">[5]</a> The Leaderboard Illusion, NeurIPS 2025 (Figure 7; simulation, not a live model ranking)</div></figure><article id=\"ref-5\" class=\"reference-card\"><img src=\"images/w12_21_01.png\" alt=\"\" loading=\"lazy\"><div><h3>[5] The Leaderboard Illusion</h3><p class=\"reference-meta\">Singh et al. \u00b7 NeurIPS 2025 \u00b7 Datasets and Benchmarks</p><p>Private testing and selective reporting of model variants.</p><div class=\"reference-links\"><a href=\"https://papers.nips.cc/paper_files/paper/2025/file/70a93f260a51123b3c0e33ecd1b4de97-Paper-Datasets_and_Benchmarks_Track.pdf\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>')\n\n    text('## 22 \u00b7 Preference, Task Success, and Generalization')\n    text('- Preference: which answer did users like?\\n- Task success: did the agent complete the goal?\\n- Generalization: does it work on new tasks?')\n    text('<div class=\"lesson-cite\"><a href=\"#ref-4\" aria-label=\"Reference 4: Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference\">[4]</a> Chatbot Arena, ICML 2024; AI Agents That Matter, TMLR 2025; course synthesis</div>')\n\n    text('## 23 \u00b7 Judging LLM as a Judge')\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_23_01.png\"><img src=\"images/w12_23_01.png\" alt=\"Judging LLM as a Judge \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-6\" aria-label=\"Reference 6: Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena\">[6]</a> Zheng et al. \u00b7 NeurIPS 2023</div></figure>')\n\n    text('## 24 \u00b7 The Default Pairwise Judge Prompt')\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_24_02.png\"><img src=\"images/w12_24_02.png\" alt=\"The Default Pairwise Judge Prompt \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-6\" aria-label=\"Reference 6: Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena\">[6]</a> Zheng et al. \u00b7 NeurIPS 2023</div></figure><article id=\"ref-6\" class=\"reference-card\"><img src=\"images/w12_24_02.png\" alt=\"\" loading=\"lazy\"><div><h3>[6] Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena</h3><p class=\"reference-meta\">Zheng et al. \u00b7 NeurIPS 2023</p><p>Pairwise grading prompts and judge bias.</p><div class=\"reference-links\"><a href=\"https://papers.nips.cc/paper_files/paper/2023/hash/91f18a1287b398d378ef22505bf41832-Abstract-Datasets_and_Benchmarks.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>')\n\n    text('## 25 \u00b7 Checking the Model Judge')\n    text('- Start with cases that people have checked.\\n- Swap the answer order and inspect disagreements.\\n- Count false success and false failure separately.\\n- Save the rubric and the judge version.')\n    text(story(STORIES[25][0], *STORIES[25][1]))\n    text('<div class=\"lesson-cite\"><a href=\"#ref-6\" aria-label=\"Reference 6: Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena\">[6]</a> Judging LLM as a Judge with MT Bench and Chatbot Arena, NeurIPS 2023; practical synthesis</div>')\n\n    text('## 26 \u00b7 Autonomous Evaluation of Digital Agents')\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_26_01.png\"><img src=\"images/w12_26_01.png\" alt=\"Autonomous Evaluation of Digital Agents \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-7\" aria-label=\"Reference 7: Autonomous Evaluation and Refinement of Digital Agents\">[7]</a> Pan et al. \u00b7 COLM 2024</div></figure>')\n\n    text('## 27 \u00b7 Judging Task Completion from Screenshots')\n    text('- VLM = vision language model.\\n- The evaluator reads screenshots to judge whether the task finished.\\n- The paper reports higher accuracy with a more expensive evaluator.')\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_27_01.png\"><img src=\"images/w12_27_01.png\" alt=\"Judging Task Completion from Screenshots \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-7\" aria-label=\"Reference 7: Autonomous Evaluation and Refinement of Digital Agents\">[7]</a> Pan et al. \u00b7 COLM 2024</div></figure>')\n\n    text('## 28 \u00b7 Modular and End to End Evaluators')\n    text('- Modular: describe the screenshots, then ask a language model.\\n- End to end: a vision language model reads the screenshots.\\n- VLM = vision language model. LM = language model.')\n    text(story(STORIES[28][0], *STORIES[28][1]))\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_28_02.png\"><img src=\"images/w12_28_02.png\" alt=\"Modular and End to End Evaluators \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-7\" aria-label=\"Reference 7: Autonomous Evaluation and Refinement of Digital Agents\">[7]</a> Pan et al. \u00b7 COLM 2024</div></figure><article id=\"ref-7\" class=\"reference-card\"><img src=\"images/w12_28_02.png\" alt=\"\" loading=\"lazy\"><div><h3>[7] Autonomous Evaluation and Refinement of Digital Agents</h3><p class=\"reference-meta\">Pan et al. \u00b7 COLM 2024</p><p>Compare action matching with checks of completed tasks.</p><div class=\"reference-links\"><a href=\"https://openreview.net/forum?id=NPAQ6FKSmK\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a><a href=\"https://nlp.cs.berkeley.edu/pubs/Pan-Zhang-Tomlin-Zhou-Levine-Suhr_2024_Autonomous_paper.pdf\" target=\"_blank\" rel=\"noopener noreferrer\">Paper PDF \u2197</a></div></div></article>')\n\n    text('## 29 \u00b7 Action Matching Can Give the Wrong Ranking')\n    text('- AitW = Android in the Wild. Task: follow an instruction in a phone app.\\n- Parentheses: action matching. Bars: task success judged by each evaluator.')\n    action_scores = [('Trace A', 4 / 4), ('Trace B', 2 / 4)]\n    outcome_scores = [('Trace A', 0), ('Trace B', 1)]\n    text(matching_demo(action_scores, outcome_scores))\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_29_01.png\"><img src=\"images/w12_29_01.png\" alt=\"Action Matching Can Give the Wrong Ranking \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-7\" aria-label=\"Reference 7: Autonomous Evaluation and Refinement of Digital Agents\">[7]</a> Autonomous Evaluation and Refinement of Digital Agents, COLM 2024 (Figure 2)</div></figure>')\n\n    text('## 30 \u00b7 What Different Benchmarks Measure')\n    text('- Some benchmarks test answers to difficult questions.\\n- Others test whether an agent can finish a longer sequence of work.\\n- Evidence from one setting may not predict performance in another.')\n\n    text(\"## 31 \u00b7 Humanity's Last Exam\")\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_31_01.png\"><img src=\"images/w12_31_01.png\" alt=\"Humanity&#x27;s Last Exam \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-8\" aria-label=\"Reference 8: A benchmark of expert-level academic questions to assess AI capabilities\">[8]</a> Center for AI Safety, Scale AI &amp; HLE Contributors Consortium \u00b7 Nature 649, 1139\u20131146 (2026)</div></figure>')\n\n    text('## 32 \u00b7 HLE: Building the Question Set')\n    text('- 2,500 public questions across more than 100 subjects, plus a private test set.\\n- Nearly 1,000 contributors from over 500 institutions across 50 countries.\\n- Released in January 2025 and published in Nature on 28 January 2026.')\n    text(story(STORIES[32][0], *STORIES[32][1]))\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_32_02.png\"><img src=\"images/w12_32_02.png\" alt=\"HLE: Building the Question Set \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-8\" aria-label=\"Reference 8: A benchmark of expert-level academic questions to assess AI capabilities\">[8]</a> Center for AI Safety, Scale AI &amp; HLE Contributors Consortium \u00b7 Nature 649, 1139\u20131146 (2026)</div></figure><article id=\"ref-8\" class=\"reference-card\"><img src=\"images/w12_32_02.png\" alt=\"\" loading=\"lazy\"><div><h3>[8] A benchmark of expert-level academic questions to assess AI capabilities</h3><p class=\"reference-meta\">Center for AI Safety, Scale AI &amp; HLE Contributors Consortium \u00b7 Nature 649, 1139\u20131146 (2026)</p><p>Humanity&#x27;s Last Exam and its expert question review process.</p><div class=\"reference-links\"><a href=\"https://www.nature.com/articles/s41586-025-09962-4\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a><a href=\"https://arxiv.org/abs/2501.14249\" target=\"_blank\" rel=\"noopener noreferrer\">View preprint \u2197</a></div></div></article>')\n\n    text('## 33 \u00b7 HLE: Scope and Reporting Requirements')\n    text(\"HLE = Humanity's Last Exam\\n- Questions have verifiable answers.\\n- Report the tools, attempts, and calibration.\\n- Research workflows require additional tests.\")\n    text('<div class=\"lesson-cite\"><a href=\"#ref-8\" aria-label=\"Reference 8: A benchmark of expert-level academic questions to assess AI capabilities\">[8]</a> Humanity&#x27;s Last Exam, Nature 2026; arXiv 2501.14249 (scope and limitations)</div>')\n\n    text('## 34 \u00b7 Long Software Tasks')\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_34_01.png\"><img src=\"images/w12_34_01.png\" alt=\"Long Software Tasks \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-9\" aria-label=\"Reference 9: Measuring AI Ability to Complete Long Software Tasks\">[9]</a> Kwa et al. \u00b7 NeurIPS 2025</div></figure>')\n\n    text('## 35 \u00b7 METR: Estimating the Time Horizon')\n    text('- HCAST = Human Calibrated Autonomy Software Tasks.\\n- SWAA = Software Atomic Actions. RE Bench = Research Engineering Benchmark.\\n- SWE = software engineering. R&D = research and development.')\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_35_01.png\"><img src=\"images/w12_35_01.png\" alt=\"METR: Estimating the Time Horizon \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-9\" aria-label=\"Reference 9: Measuring AI Ability to Complete Long Software Tasks\">[9]</a> Measuring AI Ability to Complete Long Software Tasks, NeurIPS 2025 (Figure 2)</div></figure>')\n\n    text('## 36 \u00b7 METR: Success Probability and Human Task Time')\n    text('- METR = Model Evaluation and Threat Research.\\n- Horizontal axis: human task time.\\n- Vertical axis: success probability.\\n- 50% horizon: about 54 minutes.\\n- 90% reliability gives a shorter horizon.')\n    minutes = list(range(0, 61, 5))\n    probabilities = [1 / (1 + (t / 30) ** 1.4) for t in minutes]\n    crossings = [t for t, p in zip(minutes, probabilities) if p <= 0.5]\n    horizon = min(crossings)  # @inspect horizon\n    text(horizon_demo(minutes, probabilities, horizon))\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_36_01.png\"><img src=\"images/w12_36_01.png\" alt=\"METR: Success Probability and Human Task Time \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-9\" aria-label=\"Reference 9: Measuring AI Ability to Complete Long Software Tasks\">[9]</a> Measuring AI Ability to Complete Long Software Tasks, NeurIPS 2025 (Figure 4, selected panel)</div></figure><article id=\"ref-9\" class=\"reference-card\"><img src=\"images/w12_36_01.png\" alt=\"\" loading=\"lazy\"><div><h3>[9] Measuring AI Ability to Complete Long Software Tasks</h3><p class=\"reference-meta\">Kwa et al. \u00b7 NeurIPS 2025</p><p>Relate task success to the time a human expert needs.</p><div class=\"reference-links\"><a href=\"https://proceedings.neurips.cc/paper_files/paper/2025/hash/85069585133c4c168c865e65d72e9775-Abstract-Conference.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>')\n\n    text('## 37 \u00b7 Codex: Auditing Coding Benchmark Tasks')\n    text('- 731 public tasks. Agent assisted review: 200 broken. Human review: 249 broken.\\n- Detailed review followed screening. This is an audit of flagged tasks.')\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_37_01.png\"><img src=\"images/w12_37_01.png\" alt=\"Codex: Auditing Coding Benchmark Tasks \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-10\" aria-label=\"Reference 10: Separating signal from noise in coding evaluations\">[10]</a> OpenAI, Separating signal from noise in coding evaluations, Jul 2026 (original methodology figure)</div></figure><article id=\"ref-10\" class=\"reference-card\"><img src=\"images/w12_37_01.png\" alt=\"\" loading=\"lazy\"><div><h3>[10] Separating signal from noise in coding evaluations</h3><p class=\"reference-meta\">OpenAI \u00b7 2026</p><p>Audit the tasks and tests behind software benchmark scores.</p><div class=\"reference-links\"><a href=\"https://openai.com/index/separating-signal-from-noise-coding-evaluations/\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>')\n\n    text('## 38 \u00b7 What to Save with an Evaluation Result')\n    text('- Task files and the success check.\\n- Agent, environment, budget, and baseline.\\n- Repeated runs, traces, and failure types.\\n- Grader version, calibration, and the task audit.')\n    text(story(STORIES[38][0], *STORIES[38][1]))\n    text('<div class=\"lesson-cite\"><a href=\"#ref-10\" aria-label=\"Reference 10: Separating signal from noise in coding evaluations\">[10]</a> Practical synthesis from the research papers and the OpenAI July 2026 audit</div>')\n\n    text('## 39 \u00b7 Optional: TheAgentCompany')\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_39_01.png\"><img src=\"images/w12_39_01.png\" alt=\"Optional: TheAgentCompany \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-11\" aria-label=\"Reference 11: TheAgentCompany: Benchmarking LLM Agents on Consequential Real World Tasks\">[11]</a> Xu et al. \u00b7 NeurIPS 2025 \u00b7 Datasets and Benchmarks</div></figure>')\n\n    text('## 40 \u00b7 TheAgentCompany: Tasks Across Workplace Tools')\n    text('- 175 tasks in a reproducible, simulated workplace.\\n- Evaluation checks the work state and the required milestones.')\n    text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_40_01.png\"><img src=\"images/w12_40_01.png\" alt=\"TheAgentCompany: Tasks Across Workplace Tools \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-11\" aria-label=\"Reference 11: TheAgentCompany: Benchmarking LLM Agents on Consequential Real World Tasks\">[11]</a> Xu et al. | NeurIPS 2025 | Figure 1 | Original benchmark design</div></figure><article id=\"ref-11\" class=\"reference-card\"><img src=\"images/w12_40_01.png\" alt=\"\" loading=\"lazy\"><div><h3>[11] TheAgentCompany: Benchmarking LLM Agents on Consequential Real World Tasks</h3><p class=\"reference-meta\">Xu et al. \u00b7 NeurIPS 2025 \u00b7 Datasets and Benchmarks</p><p>Workplace tasks that span tools and score intermediate milestones.</p><div class=\"reference-links\"><a href=\"https://papers.nips.cc/paper_files/paper/2025/file/0d744742f6fac4d1134c019b7cef3c8a-Paper-Datasets_and_Benchmarks_Track.pdf\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>')\n\n    text('## 41 \u00b7 TheAgentCompany: Results by Platform and Task')\n    text('- SDE in the figure: software engineering. PM = project management.\\n- DS = data science. Admin = administration. HR = human resources.')\n    text('<figure class=\"lesson-figure\"><div class=\"source-table\"><table><caption>Table 1 \u00b7 OpenHands 0.28.1 with Gemini 2.5 Pro</caption><thead><tr><th scope=\\'col\\'>Scoring rule</th><th scope=\\'col\\'>Reported score</th></tr></thead><tbody><tr><td>Full task success</td><td>30.3%</td></tr><tr><td>With partial credit</td><td>39.3%</td></tr></tbody></table></div><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_41_01.png\"><img src=\"images/w12_41_01.png\" alt=\"TheAgentCompany: Results by Platform and Task \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-11\" aria-label=\"Reference 11: TheAgentCompany: Benchmarking LLM Agents on Consequential Real World Tasks\">[11]</a> Xu et al. | NeurIPS 2025 | Figure 2 | Tested model versions in the paper</div></figure>')\n\n    text('## 42 \u00b7 Evaluation: Success, Fairness, and Scope')\n    text('- Define a clear success condition.\\n- Use fair comparisons and repeated runs.\\n- Check the evaluator itself.\\n- Keep the claim within the tested setting.')\n\n    text('## 43 \u00b7 Thank you')\n"
+  },
+  "hidden_line_numbers": {
+    "lecture_19_full.py": []
+  },
+  "steps": [
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 7,
+          "function_name": "main",
+          "code": "def main():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 9,
+          "function_name": "main",
+          "code": "text('## 01 \u00b7 Agent Evaluation and Benchmarks')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 01 \u00b7 Agent Evaluation and Benchmarks",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "text('CSE 398/498 \u00b7 Vibe Research for Scientific Discovery \u00b7 Lichao Sun \u00b7 Lehigh University')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "CSE 398/498 \u00b7 Vibe Research for Scientific Discovery \u00b7 Lichao Sun \u00b7 Lehigh University",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 12,
+          "function_name": "main",
+          "code": "text(\"## 02 \u00b7 Today's Plan\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 02 \u00b7 Today's Plan",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 13,
+          "function_name": "main",
+          "code": "text('Learning goal\\n- Understand what an agent benchmark score actually measures.\\nPapers and evaluations\\n- \u03c4\u00b2-Bench and AI Agents That Matter for reliability and cost.\\n- Chatbot Arena and model judges for preferences and grading.\\n- HLE, METR, and TheAgentCompany for different kinds of tasks.\\nHow we will read the evidence\\n- Check the success rule, repeated runs, evaluator, and task coverage.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Learning goal\n- Understand what an agent benchmark score actually measures.\nPapers and evaluations\n- \u03c4\u00b2-Bench and AI Agents That Matter for reliability and cost.\n- Chatbot Arena and model judges for preferences and grading.\n- HLE, METR, and TheAgentCompany for different kinds of tasks.\nHow we will read the evidence\n- Check the success rule, repeated runs, evaluator, and task coverage.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "text('## 03 \u00b7 What Counts as Task Success?')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 03 \u00b7 What Counts as Task Success?",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "text('- The agent says it finished.\\n- The trace records what it tried.\\n- The environment shows whether the requested change happened.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The agent says it finished.\n- The trace records what it tried.\n- The environment shows whether the requested change happened.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 17,
+          "function_name": "main",
+          "code": "text(story(STORIES[3][0], *STORIES[3][1]))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<section class=\"lesson-demo\" aria-label=\"Check a booking cancellation\"><h3>Check a booking cancellation</h3><p class=\"demo-kicker\">Teaching example</p><div class=\"demo-controls\"><button type=\"button\" data-frame=\"0\" aria-pressed=\"true\">Agent reply</button><button type=\"button\" data-frame=\"1\" aria-pressed=\"false\">Booking record</button></div><div class=\"demo-panel\" data-panel=\"0\"><p>The agent says: \u201cYour booking has been cancelled.\u201d</p></div><div class=\"demo-panel\" data-panel=\"1\" hidden><p>The record still reads ACTIVE. The task failed under a state-based check.</p></div></section>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 18,
+          "function_name": "main",
+          "code": "text('<div class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: \u03c4\u00b2-Bench: Evaluating Conversational Agents in a Dual-Control Environment\">[1]</a> Course synthesis grounded in tau squared benchmark task evaluation, ICML 2026</div>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<div class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: \u03c4\u00b2-Bench: Evaluating Conversational Agents in a Dual-Control Environment\">[1]</a> Course synthesis grounded in tau squared benchmark task evaluation, ICML 2026</div>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "text('## 04 \u00b7 \u03c4\u00b2-Bench')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 04 \u00b7 \u03c4\u00b2-Bench",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_04_02.png\"><img src=\"images/w12_04_02.png\" alt=\"\u03c4\u00b2-Bench \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: \u03c4\u00b2-Bench: Evaluating Conversational Agents in a Dual-Control Environment\">[1]</a> Barres et al. \u00b7 ICML 2026 \u00b7 PMLR 306, pp. 6736\u20136782</div></figure>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_04_02.png\"><img src=\"images/w12_04_02.png\" alt=\"\u03c4\u00b2-Bench \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: \u03c4\u00b2-Bench: Evaluating Conversational Agents in a Dual-Control Environment\">[1]</a> Barres et al. \u00b7 ICML 2026 \u00b7 PMLR 306, pp. 6736\u20136782</div></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "text('## 05 \u00b7 Success Can Mean Refusing an Invalid Action')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 05 \u00b7 Success Can Mean Refusing an Invalid Action",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 24,
+          "function_name": "main",
+          "code": "text('DB: database state. COMMUNICATE: required user information. nl_assertions: natural language checks.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "DB: database state. COMMUNICATE: required user information. nl_assertions: natural language checks.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 25,
+          "function_name": "main",
+          "code": "text(story(STORIES[5][0], *STORIES[5][1]))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<section class=\"lesson-demo\" aria-label=\"Apply the policy before acting\"><h3>Apply the policy before acting</h3><p class=\"demo-kicker\">Teaching example</p><div class=\"demo-controls\"><button type=\"button\" data-frame=\"0\" aria-pressed=\"true\">Request</button><button type=\"button\" data-frame=\"1\" aria-pressed=\"false\">Expected behavior</button></div><div class=\"demo-panel\" data-panel=\"0\"><p>The user asks to cancel a nonrefundable ticket outside the allowed window.</p></div><div class=\"demo-panel\" data-panel=\"1\" hidden><p>Explain the policy and leave the reservation unchanged.</p></div></section>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"source-code\"><strong>Airline task 0 \u00b7 JSON excerpt</strong><pre><code>{\\n  &quot;id&quot;: &quot;0&quot;,\\n  &quot;evaluation_criteria&quot;: {\\n    &quot;actions&quot;: [],\\n    &quot;communicate_info&quot;: [],\\n    &quot;nl_assertions&quot;: [\\n      &quot;Agent should refuse to proceed with the cancellation.&quot;\\n    ],\\n    &quot;reward_basis&quot;: [\\n      &quot;DB&quot;,\\n      &quot;COMMUNICATE&quot;\\n    ]\\n  }\\n}</code></pre></div><details><summary>View original source image</summary><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_05_02.png\"><img src=\"images/w12_05_02.png\" alt=\"Success Can Mean Refusing an Invalid Action \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div></details><div class=\"lesson-cite\"><a href=\"#ref-2\" aria-label=\"Reference 2: \u03c4\u00b2-Bench Airline Tasks\">[2]</a> Sierra Research \u00b7 Benchmark repository</div></figure><article id=\"ref-2\" class=\"reference-card\"><img src=\"images/w12_05_02.png\" alt=\"\" loading=\"lazy\"><div><h3>[2] \u03c4\u00b2-Bench Airline Tasks</h3><p class=\"reference-meta\">Sierra Research \u00b7 Benchmark repository</p><p>Task records and success criteria for the airline domain.</p><div class=\"reference-links\"><a href=\"https://github.com/sierra-research/tau2-bench/blob/main/data/tau2/domains/airline/tasks.json\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"source-code\"><strong>Airline task 0 \u00b7 JSON excerpt</strong><pre><code>{\n  &quot;id&quot;: &quot;0&quot;,\n  &quot;evaluation_criteria&quot;: {\n    &quot;actions&quot;: [],\n    &quot;communicate_info&quot;: [],\n    &quot;nl_assertions&quot;: [\n      &quot;Agent should refuse to proceed with the cancellation.&quot;\n    ],\n    &quot;reward_basis&quot;: [\n      &quot;DB&quot;,\n      &quot;COMMUNICATE&quot;\n    ]\n  }\n}</code></pre></div><details><summary>View original source image</summary><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_05_02.png\"><img src=\"images/w12_05_02.png\" alt=\"Success Can Mean Refusing an Invalid Action \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div></details><div class=\"lesson-cite\"><a href=\"#ref-2\" aria-label=\"Reference 2: \u03c4\u00b2-Bench Airline Tasks\">[2]</a> Sierra Research \u00b7 Benchmark repository</div></figure><article id=\"ref-2\" class=\"reference-card\"><img src=\"images/w12_05_02.png\" alt=\"\" loading=\"lazy\"><div><h3>[2] \u03c4\u00b2-Bench Airline Tasks</h3><p class=\"reference-meta\">Sierra Research \u00b7 Benchmark repository</p><p>Task records and success criteria for the airline domain.</p><div class=\"reference-links\"><a href=\"https://github.com/sierra-research/tau2-bench/blob/main/data/tau2/domains/airline/tasks.json\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 28,
+          "function_name": "main",
+          "code": "text('## 06 \u00b7 Repeated Success: pass@k and pass^k')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 06 \u00b7 Repeated Success: pass@k and pass^k",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 29,
+          "function_name": "main",
+          "code": "text('- pass@k: at least one success in k attempts.\\n- pass^k: all k attempts succeed.\\n- At k = 1, both measure a single attempt.\\n- Choose the metric that matches the reliability question.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- pass@k: at least one success in k attempts.\n- pass^k: all k attempts succeed.\n- At k = 1, both measure a single attempt.\n- Choose the metric that matches the reliability question.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 30,
+          "function_name": "main",
+          "code": "outcomes = list(product((False, True), repeat=4))"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 31,
+          "function_name": "main",
+          "code": "any_rate = sum(map(any, outcomes)) / len(outcomes)  # @inspect any_rate"
+        }
+      ],
+      "env": {
+        "any_rate": {
+          "type": "float",
+          "contents": 0.9375,
+          "dtype": null,
+          "shape": null
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 32,
+          "function_name": "main",
+          "code": "all_rate = sum(map(all, outcomes)) / len(outcomes)  # @inspect all_rate"
+        }
+      ],
+      "env": {
+        "all_rate": {
+          "type": "float",
+          "contents": 0.0625,
+          "dtype": null,
+          "shape": null
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 33,
+          "function_name": "main",
+          "code": "text(outcome_demo(outcomes, any_rate, all_rate))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<section class=\"lesson-demo\" aria-label=\"Which outcomes count?\"><h3>Which outcomes count?</h3><p class=\"demo-kicker\">Teaching example</p><div class=\"demo-controls\"><button type=\"button\" data-frame=\"0\" aria-pressed=\"true\">All outcomes</button><button type=\"button\" data-frame=\"1\" aria-pressed=\"false\">At least one</button><button type=\"button\" data-frame=\"2\" aria-pressed=\"false\">All four</button></div><div class=\"demo-panel\" data-panel=\"0\"><div class=\"outcome-grid\"><span>F F F F</span><span>F F F S</span><span>F F S F</span><span>F F S S</span><span>F S F F</span><span>F S F S</span><span>F S S F</span><span>F S S S</span><span>S F F F</span><span>S F F S</span><span>S F S F</span><span>S F S S</span><span>S S F F</span><span>S S F S</span><span>S S S F</span><span>S S S S</span></div><p>S means success. F means failure. At p = 0.5, all 16 outcomes are equally likely.</p></div><div class=\"demo-panel\" data-panel=\"1\" hidden><div class=\"outcome-grid\"><span>F F F F</span><span class=\"qualifies\">F F F S</span><span class=\"qualifies\">F F S F</span><span class=\"qualifies\">F F S S</span><span class=\"qualifies\">F S F F</span><span class=\"qualifies\">F S F S</span><span class=\"qualifies\">F S S F</span><span class=\"qualifies\">F S S S</span><span class=\"qualifies\">S F F F</span><span class=\"qualifies\">S F F S</span><span class=\"qualifies\">S F S F</span><span class=\"qualifies\">S F S S</span><span class=\"qualifies\">S S F F</span><span class=\"qualifies\">S S F S</span><span class=\"qualifies\">S S S F</span><span class=\"qualifies\">S S S S</span></div><p>15 of 16 outcomes qualify. <strong>93.75%</strong></p></div><div class=\"demo-panel\" data-panel=\"2\" hidden><div class=\"outcome-grid\"><span>F F F F</span><span>F F F S</span><span>F F S F</span><span>F F S S</span><span>F S F F</span><span>F S F S</span><span>F S S F</span><span>F S S S</span><span>S F F F</span><span>S F F S</span><span>S F S F</span><span>S F S S</span><span>S S F F</span><span>S S F S</span><span>S S S F</span><span class=\"qualifies\">S S S S</span></div><p>1 of 16 outcomes qualifies. <strong>6.25%</strong></p></div></section>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 34,
+          "function_name": "main",
+          "code": "text('<div class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: \u03c4\u00b2-Bench: Evaluating Conversational Agents in a Dual-Control Environment\">[1]</a> \u03c4\u00b2-Bench, ICML 2026 (evaluation metrics)</div>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<div class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: \u03c4\u00b2-Bench: Evaluating Conversational Agents in a Dual-Control Environment\">[1]</a> \u03c4\u00b2-Bench, ICML 2026 (evaluation metrics)</div>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 36,
+          "function_name": "main",
+          "code": "text('## 07 \u00b7 \u03c4\u00b2-Bench: Reliability Across Repeated Runs')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 07 \u00b7 \u03c4\u00b2-Bench: Reliability Across Repeated Runs",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 37,
+          "function_name": "main",
+          "code": "text('- Retail: orders and returns. Airline: bookings. Telecom: service troubleshooting.\\n- pass^k requires success in every one of k runs.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Retail: orders and returns. Airline: bookings. Telecom: service troubleshooting.\n- pass^k requires success in every one of k runs.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 38,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"source-table\"><table><caption>Figure 3 \u00b7 GPT-4.1 repeated success</caption><thead><tr><th scope=\\'col\\'>Domain</th><th scope=\\'col\\'>k = 1</th><th scope=\\'col\\'>k = 2</th><th scope=\\'col\\'>k = 3</th><th scope=\\'col\\'>k = 4</th></tr></thead><tbody><tr><td>Retail</td><td>74%</td><td>64%</td><td>58%</td><td>53%</td></tr><tr><td>Airline</td><td>56%</td><td>46%</td><td>42%</td><td>40%</td></tr><tr><td>Telecom</td><td>34%</td><td>26%</td><td>22%</td><td>19%</td></tr></tbody></table></div><details><summary>View original source image</summary><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_07_02.png\"><img src=\"images/w12_07_02.png\" alt=\"\u03c4\u00b2-Bench: Reliability Across Repeated Runs \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div></details><div class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: \u03c4\u00b2-Bench: Evaluating Conversational Agents in a Dual-Control Environment\">[1]</a> \u03c4\u00b2-Bench, ICML 2026 (Figure 3, original experimental results)</div></figure><article id=\"ref-1\" class=\"reference-card\"><img src=\"images/w12_07_02.png\" alt=\"\" loading=\"lazy\"><div><h3>[1] \u03c4\u00b2-Bench: Evaluating Conversational Agents in a Dual-Control Environment</h3><p class=\"reference-meta\">Barres et al. \u00b7 ICML 2026 \u00b7 PMLR 306, pp. 6736\u20136782</p><p>Repeated success and the effects of user coordination.</p><div class=\"reference-links\"><a href=\"https://proceedings.mlr.press/v306/barres26a.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"source-table\"><table><caption>Figure 3 \u00b7 GPT-4.1 repeated success</caption><thead><tr><th scope='col'>Domain</th><th scope='col'>k = 1</th><th scope='col'>k = 2</th><th scope='col'>k = 3</th><th scope='col'>k = 4</th></tr></thead><tbody><tr><td>Retail</td><td>74%</td><td>64%</td><td>58%</td><td>53%</td></tr><tr><td>Airline</td><td>56%</td><td>46%</td><td>42%</td><td>40%</td></tr><tr><td>Telecom</td><td>34%</td><td>26%</td><td>22%</td><td>19%</td></tr></tbody></table></div><details><summary>View original source image</summary><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_07_02.png\"><img src=\"images/w12_07_02.png\" alt=\"\u03c4\u00b2-Bench: Reliability Across Repeated Runs \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div></details><div class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: \u03c4\u00b2-Bench: Evaluating Conversational Agents in a Dual-Control Environment\">[1]</a> \u03c4\u00b2-Bench, ICML 2026 (Figure 3, original experimental results)</div></figure><article id=\"ref-1\" class=\"reference-card\"><img src=\"images/w12_07_02.png\" alt=\"\" loading=\"lazy\"><div><h3>[1] \u03c4\u00b2-Bench: Evaluating Conversational Agents in a Dual-Control Environment</h3><p class=\"reference-meta\">Barres et al. \u00b7 ICML 2026 \u00b7 PMLR 306, pp. 6736\u20136782</p><p>Repeated success and the effects of user coordination.</p><div class=\"reference-links\"><a href=\"https://proceedings.mlr.press/v306/barres26a.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 40,
+          "function_name": "main",
+          "code": "text('## 08 \u00b7 \u03c4\u00b2-Bench: Reasoning and User Coordination')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 08 \u00b7 \u03c4\u00b2-Bench: Reasoning and User Coordination",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 41,
+          "function_name": "main",
+          "code": "text('- Default: shared control. No user: the agent directly controls both sides.\\n- Oracle plan: the correct plan is supplied.\\n- Left: original policy. Right: policy with a workflow.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Default: shared control. No user: the agent directly controls both sides.\n- Oracle plan: the correct plan is supplied.\n- Left: original policy. Right: policy with a workflow.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 42,
+          "function_name": "main",
+          "code": "text(story(STORIES[8][0], *STORIES[8][1]))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<section class=\"lesson-demo\" aria-label=\"Remove one source of difficulty\"><h3>Remove one source of difficulty</h3><p class=\"demo-kicker\">Teaching example</p><div class=\"demo-controls\"><button type=\"button\" data-frame=\"0\" aria-pressed=\"true\">Default</button><button type=\"button\" data-frame=\"1\" aria-pressed=\"false\">No user</button><button type=\"button\" data-frame=\"2\" aria-pressed=\"false\">Oracle plan</button></div><div class=\"demo-panel\" data-panel=\"0\"><p>The agent must coordinate with a user and decide how to finish the task.</p></div><div class=\"demo-panel\" data-panel=\"1\" hidden><p>The agent can take the user&#x27;s actions directly. Planning is still required.</p></div><div class=\"demo-panel\" data-panel=\"2\" hidden><p>The correct plan is supplied as well. Compare these controlled conditions in Figure 4.</p></div></section>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 43,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><section class=\"lesson-demo\" aria-label=\"Telecom pass\u00b9 across evaluation modes\"><h3>Telecom pass\u00b9 across evaluation modes</h3><p class=\"demo-kicker\">Published results \u00b7 transcribed from Figure 4</p><div class=\"demo-controls\"><button type=\"button\" data-frame=\"0\" aria-pressed=\"true\">Original policy</button><button type=\"button\" data-frame=\"1\" aria-pressed=\"false\">Policy with workflow</button></div><div class=\"demo-panel\" data-panel=\"0\"><div class=\"source-table\"><table><caption>Figure 4 \u00b7 Original policy</caption><thead><tr><th scope=\\'col\\'>Mode</th><th scope=\\'col\\'>GPT-4.1</th><th scope=\\'col\\'>o4-mini</th></tr></thead><tbody><tr><td>Default</td><td>34%</td><td>42%</td></tr><tr><td>No user</td><td>52%</td><td>67%</td></tr><tr><td>Oracle plan</td><td>73%</td><td>96%</td></tr></tbody></table></div></div><div class=\"demo-panel\" data-panel=\"1\" hidden><div class=\"source-table\"><table><caption>Figure 4 \u00b7 Policy with workflow</caption><thead><tr><th scope=\\'col\\'>Mode</th><th scope=\\'col\\'>GPT-4.1</th><th scope=\\'col\\'>o4-mini</th></tr></thead><tbody><tr><td>Default</td><td>52%</td><td>59%</td></tr><tr><td>No user</td><td>68%</td><td>72%</td></tr><tr><td>Oracle plan</td><td>57%</td><td>88%</td></tr></tbody></table></div></div></section><details><summary>View original source image</summary><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_08_02.png\"><img src=\"images/w12_08_02.png\" alt=\"\u03c4\u00b2-Bench: Reasoning and User Coordination \u00b7 image 1\"><span>Enlarge figure \u2197</span></button><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_08_03.png\"><img src=\"images/w12_08_03.png\" alt=\"\u03c4\u00b2-Bench: Reasoning and User Coordination \u00b7 image 2\"><span>Enlarge figure \u2197</span></button></div></details><div class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: \u03c4\u00b2-Bench: Evaluating Conversational Agents in a Dual-Control Environment\">[1]</a> \u03c4\u00b2-Bench, ICML 2026 (Figure 4, original Telecom ablation)</div></figure>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><section class=\"lesson-demo\" aria-label=\"Telecom pass\u00b9 across evaluation modes\"><h3>Telecom pass\u00b9 across evaluation modes</h3><p class=\"demo-kicker\">Published results \u00b7 transcribed from Figure 4</p><div class=\"demo-controls\"><button type=\"button\" data-frame=\"0\" aria-pressed=\"true\">Original policy</button><button type=\"button\" data-frame=\"1\" aria-pressed=\"false\">Policy with workflow</button></div><div class=\"demo-panel\" data-panel=\"0\"><div class=\"source-table\"><table><caption>Figure 4 \u00b7 Original policy</caption><thead><tr><th scope='col'>Mode</th><th scope='col'>GPT-4.1</th><th scope='col'>o4-mini</th></tr></thead><tbody><tr><td>Default</td><td>34%</td><td>42%</td></tr><tr><td>No user</td><td>52%</td><td>67%</td></tr><tr><td>Oracle plan</td><td>73%</td><td>96%</td></tr></tbody></table></div></div><div class=\"demo-panel\" data-panel=\"1\" hidden><div class=\"source-table\"><table><caption>Figure 4 \u00b7 Policy with workflow</caption><thead><tr><th scope='col'>Mode</th><th scope='col'>GPT-4.1</th><th scope='col'>o4-mini</th></tr></thead><tbody><tr><td>Default</td><td>52%</td><td>59%</td></tr><tr><td>No user</td><td>68%</td><td>72%</td></tr><tr><td>Oracle plan</td><td>57%</td><td>88%</td></tr></tbody></table></div></div></section><details><summary>View original source image</summary><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_08_02.png\"><img src=\"images/w12_08_02.png\" alt=\"\u03c4\u00b2-Bench: Reasoning and User Coordination \u00b7 image 1\"><span>Enlarge figure \u2197</span></button><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_08_03.png\"><img src=\"images/w12_08_03.png\" alt=\"\u03c4\u00b2-Bench: Reasoning and User Coordination \u00b7 image 2\"><span>Enlarge figure \u2197</span></button></div></details><div class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: \u03c4\u00b2-Bench: Evaluating Conversational Agents in a Dual-Control Environment\">[1]</a> \u03c4\u00b2-Bench, ICML 2026 (Figure 4, original Telecom ablation)</div></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 45,
+          "function_name": "main",
+          "code": "text('## 09 \u00b7 AI Agents That Matter')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 09 \u00b7 AI Agents That Matter",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 46,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_09_01.png\"><img src=\"images/w12_09_01.png\" alt=\"AI Agents That Matter \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-3\" aria-label=\"Reference 3: AI Agents That Matter\">[3]</a> Kapoor et al. \u00b7 TMLR 2025</div></figure>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_09_01.png\"><img src=\"images/w12_09_01.png\" alt=\"AI Agents That Matter \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-3\" aria-label=\"Reference 3: AI Agents That Matter\">[3]</a> Kapoor et al. \u00b7 TMLR 2025</div></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 48,
+          "function_name": "main",
+          "code": "text('## 10 \u00b7 Simple Baselines for Agent Evaluation')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 10 \u00b7 Simple Baselines for Agent Evaluation",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 49,
+          "function_name": "main",
+          "code": "text('- Retry: ask the model again.\\n- Warming: increase the sampling temperature.\\n- Escalation: use a stronger model after failure.\\n- Compare systems under a similar budget.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Retry: ask the model again.\n- Warming: increase the sampling temperature.\n- Escalation: use a stronger model after failure.\n- Compare systems under a similar budget.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 50,
+          "function_name": "main",
+          "code": "text(story(STORIES[10][0], *STORIES[10][1]))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<section class=\"lesson-demo\" aria-label=\"Compare a simple baseline\"><h3>Compare a simple baseline</h3><p class=\"demo-kicker\">Teaching example</p><div class=\"demo-controls\"><button type=\"button\" data-frame=\"0\" aria-pressed=\"true\">One attempt</button><button type=\"button\" data-frame=\"1\" aria-pressed=\"false\">Retry</button><button type=\"button\" data-frame=\"2\" aria-pressed=\"false\">Compare</button></div><div class=\"demo-panel\" data-panel=\"0\"><p>Ask the same model to solve the task once.</p></div><div class=\"demo-panel\" data-panel=\"1\" hidden><p>Give that model another attempt. Record the extra calls and cost.</p></div><div class=\"demo-panel\" data-panel=\"2\" hidden><p>Compare the more elaborate agent with a baseline that has a similar budget.</p></div></section>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 51,
+          "function_name": "main",
+          "code": "text('<div class=\"lesson-cite\"><a href=\"#ref-3\" aria-label=\"Reference 3: AI Agents That Matter\">[3]</a> AI Agents That Matter, TMLR 2025; 2024 preprint (Sections 2.2 and 2.3)</div>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<div class=\"lesson-cite\"><a href=\"#ref-3\" aria-label=\"Reference 3: AI Agents That Matter\">[3]</a> AI Agents That Matter, TMLR 2025; 2024 preprint (Sections 2.2 and 2.3)</div>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 53,
+          "function_name": "main",
+          "code": "text('## 11 \u00b7 Accuracy and Cost on HumanEval')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 11 \u00b7 Accuracy and Cost on HumanEval",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 54,
+          "function_name": "main",
+          "code": "text('- HumanEval: short Python functions.\\n- LDB = Large Language Model Debugger.\\n- LATS = Language Agent Tree Search.\\n- Five runs across 164 problems.\\n- USD = United States dollars.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- HumanEval: short Python functions.\n- LDB = Large Language Model Debugger.\n- LATS = Language Agent Tree Search.\n- Five runs across 164 problems.\n- USD = United States dollars.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 55,
+          "function_name": "main",
+          "code": "runs = [('A', 0.70, 2), ('B', 0.80, 9)]  # accuracy and cents per task"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 56,
+          "function_name": "main",
+          "code": "eligible = [(name, score) for name, score, cents in runs if cents <= 5]"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 57,
+          "function_name": "main",
+          "code": "text(budget_demo([(name, score) for name, score, _ in runs], eligible))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<section class=\"lesson-demo\" aria-label=\"Does the ranking fit the budget?\"><h3>Does the ranking fit the budget?</h3><p class=\"demo-kicker\">Teaching example</p><div class=\"demo-controls\"><button type=\"button\" data-frame=\"0\" aria-pressed=\"true\">All runs</button><button type=\"button\" data-frame=\"1\" aria-pressed=\"false\">5\u00a2 budget</button></div><div class=\"demo-panel\" data-panel=\"0\"><div class=\"demo-bar\"><span>A</span><span class=\"bar-track\"><span style=\"width:70.00%\"></span></span><strong>70%</strong></div><div class=\"demo-bar\"><span>B</span><span class=\"bar-track\"><span style=\"width:80.00%\"></span></span><strong>80%</strong></div><p>A costs 2\u00a2 per task. B costs 9\u00a2 per task.</p></div><div class=\"demo-panel\" data-panel=\"1\" hidden><div class=\"demo-bar\"><span>A</span><span class=\"bar-track\"><span style=\"width:70.00%\"></span></span><strong>70%</strong></div><p>B exceeds the budget. A is the best eligible run in this example.</p></div></section>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 58,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_11_01.png\"><img src=\"images/w12_11_01.png\" alt=\"Accuracy and Cost on HumanEval \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-3\" aria-label=\"Reference 3: AI Agents That Matter\">[3]</a> AI Agents That Matter, TMLR 2025; 2024 preprint (Figure 1; April 2024 prices; note the broken axes)</div></figure><article id=\"ref-3\" class=\"reference-card\"><img src=\"images/w12_11_01.png\" alt=\"\" loading=\"lazy\"><div><h3>[3] AI Agents That Matter</h3><p class=\"reference-meta\">Kapoor et al. \u00b7 TMLR 2025</p><p>Cost, simple baselines, holdout sets, and reliable agent comparisons.</p><div class=\"reference-links\"><a href=\"https://openreview.net/forum?id=Zy4uFzMviZ\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a><a href=\"https://arxiv.org/abs/2407.01502\" target=\"_blank\" rel=\"noopener noreferrer\">View preprint \u2197</a></div></div></article>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_11_01.png\"><img src=\"images/w12_11_01.png\" alt=\"Accuracy and Cost on HumanEval \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-3\" aria-label=\"Reference 3: AI Agents That Matter\">[3]</a> AI Agents That Matter, TMLR 2025; 2024 preprint (Figure 1; April 2024 prices; note the broken axes)</div></figure><article id=\"ref-3\" class=\"reference-card\"><img src=\"images/w12_11_01.png\" alt=\"\" loading=\"lazy\"><div><h3>[3] AI Agents That Matter</h3><p class=\"reference-meta\">Kapoor et al. \u00b7 TMLR 2025</p><p>Cost, simple baselines, holdout sets, and reliable agent comparisons.</p><div class=\"reference-links\"><a href=\"https://openreview.net/forum?id=Zy4uFzMviZ\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a><a href=\"https://arxiv.org/abs/2407.01502\" target=\"_blank\" rel=\"noopener noreferrer\">View preprint \u2197</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 60,
+          "function_name": "main",
+          "code": "text('## 12 \u00b7 Test Sets and Claims About Generalization')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 12 \u00b7 Test Sets and Claims About Generalization",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 61,
+          "function_name": "main",
+          "code": "text('- The study sorts 17 agent benchmarks into four levels of generality.\\n- Broader claims require test cases that differ more from the development set.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The study sorts 17 agent benchmarks into four levels of generality.\n- Broader claims require test cases that differ more from the development set.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 62,
+          "function_name": "main",
+          "code": "text(story(STORIES[12][0], *STORIES[12][1]))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<section class=\"lesson-demo\" aria-label=\"What is held out?\"><h3>What is held out?</h3><p class=\"demo-kicker\">Teaching example</p><div class=\"demo-controls\"><button type=\"button\" data-frame=\"0\" aria-pressed=\"true\">New instance</button><button type=\"button\" data-frame=\"1\" aria-pressed=\"false\">New task</button><button type=\"button\" data-frame=\"2\" aria-pressed=\"false\">New environment</button></div><div class=\"demo-panel\" data-panel=\"0\"><p>Change the booking details and keep the task type.</p></div><div class=\"demo-panel\" data-panel=\"1\" hidden><p>Keep the environment and test a different goal.</p></div><div class=\"demo-panel\" data-panel=\"2\" hidden><p>Change the tool or interface. The claim now needs broader evidence.</p></div></section>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 63,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"source-table\"><table><caption>Appropriate holdouts in the 17 benchmarks surveyed</caption><thead><tr><th scope=\\'col\\'>Generality</th><th scope=\\'col\\'>What should be held out?</th><th scope=\\'col\\'>Benchmarks</th></tr></thead><tbody><tr><td>Distribution-specific</td><td>In-distribution samples</td><td>1 / 1</td></tr><tr><td>Task-specific</td><td>Out-of-distribution samples</td><td>3 / 6</td></tr><tr><td>Domain-general</td><td>Tasks</td><td>1 / 8</td></tr><tr><td>Fully general</td><td>Domains</td><td>0 / 2</td></tr><tr><td>All benchmarks</td><td>7 had no holdout and no stated plan to add one</td><td>5 / 17</td></tr></tbody></table></div><details><summary>View original source image</summary><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_12_02.png\"><img src=\"images/w12_12_02.png\" alt=\"Test Sets and Claims About Generalization \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div></details><div class=\"lesson-cite\"><a href=\"#ref-3\" aria-label=\"Reference 3: AI Agents That Matter\">[3]</a> Kapoor et al. \u00b7 TMLR 2025</div></figure>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"source-table\"><table><caption>Appropriate holdouts in the 17 benchmarks surveyed</caption><thead><tr><th scope='col'>Generality</th><th scope='col'>What should be held out?</th><th scope='col'>Benchmarks</th></tr></thead><tbody><tr><td>Distribution-specific</td><td>In-distribution samples</td><td>1 / 1</td></tr><tr><td>Task-specific</td><td>Out-of-distribution samples</td><td>3 / 6</td></tr><tr><td>Domain-general</td><td>Tasks</td><td>1 / 8</td></tr><tr><td>Fully general</td><td>Domains</td><td>0 / 2</td></tr><tr><td>All benchmarks</td><td>7 had no holdout and no stated plan to add one</td><td>5 / 17</td></tr></tbody></table></div><details><summary>View original source image</summary><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_12_02.png\"><img src=\"images/w12_12_02.png\" alt=\"Test Sets and Claims About Generalization \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div></details><div class=\"lesson-cite\"><a href=\"#ref-3\" aria-label=\"Reference 3: AI Agents That Matter\">[3]</a> Kapoor et al. \u00b7 TMLR 2025</div></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 65,
+          "function_name": "main",
+          "code": "text('## 13 \u00b7 Diagnosing Evaluation Failures')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 13 \u00b7 Diagnosing Evaluation Failures",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 66,
+          "function_name": "main",
+          "code": "text('- Did the agent fail, or did the environment fail?\\n- Were the inputs, budget, and evaluator comparable?\\n- Were there enough repeated runs to measure uncertainty?\\n- Were the raw traces saved for inspection?')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Did the agent fail, or did the environment fail?\n- Were the inputs, budget, and evaluator comparable?\n- Were there enough repeated runs to measure uncertainty?\n- Were the raw traces saved for inspection?",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 67,
+          "function_name": "main",
+          "code": "text('<div class=\"lesson-cite\"><a href=\"#ref-3\" aria-label=\"Reference 3: AI Agents That Matter\">[3]</a> AI Agents That Matter, TMLR 2025; 2024 preprint (Section 6); practical synthesis</div>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<div class=\"lesson-cite\"><a href=\"#ref-3\" aria-label=\"Reference 3: AI Agents That Matter\">[3]</a> AI Agents That Matter, TMLR 2025; 2024 preprint (Section 6); practical synthesis</div>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 69,
+          "function_name": "main",
+          "code": "text('## 14 \u00b7 Preference Scores and Task Success')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 14 \u00b7 Preference Scores and Task Success",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 70,
+          "function_name": "main",
+          "code": "text('- Human votes measure which answer people prefer.\\n- A model judge applies a grading rule.\\n- Task success requires a clear check of the requested outcome.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Human votes measure which answer people prefer.\n- A model judge applies a grading rule.\n- Task success requires a clear check of the requested outcome.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 72,
+          "function_name": "main",
+          "code": "text('## 15 \u00b7 Chatbot Arena')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 15 \u00b7 Chatbot Arena",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 73,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_15_01.png\"><img src=\"images/w12_15_01.png\" alt=\"Chatbot Arena \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-4\" aria-label=\"Reference 4: Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference\">[4]</a> Chiang et al. \u00b7 ICML 2024</div></figure>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_15_01.png\"><img src=\"images/w12_15_01.png\" alt=\"Chatbot Arena \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-4\" aria-label=\"Reference 4: Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference\">[4]</a> Chiang et al. \u00b7 ICML 2024</div></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 75,
+          "function_name": "main",
+          "code": "text('## 16 \u00b7 Benchmarks for Correctness and Human Preference')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 16 \u00b7 Benchmarks for Correctness and Human Preference",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 76,
+          "function_name": "main",
+          "code": "text('- Static tests can suffer from contamination, overfitting, and saturated scores.\\n- Known correct answers are available only for some kinds of tasks.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Static tests can suffer from contamination, overfitting, and saturated scores.\n- Known correct answers are available only for some kinds of tasks.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 77,
+          "function_name": "main",
+          "code": "text('- MMLU = Massive Multitask Language Understanding. GSM8K = Grade School Math 8K.\\n- MT Bench = Multi Turn Benchmark. HellaSwag: commonsense completion. AlpacaEval: instruction following.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- MMLU = Massive Multitask Language Understanding. GSM8K = Grade School Math 8K.\n- MT Bench = Multi Turn Benchmark. HellaSwag: commonsense completion. AlpacaEval: instruction following.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 78,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_16_01.png\"><img src=\"images/w12_16_01.png\" alt=\"Benchmarks for Correctness and Human Preference \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-4\" aria-label=\"Reference 4: Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference\">[4]</a> Chiang et al. \u00b7 ICML 2024</div></figure>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_16_01.png\"><img src=\"images/w12_16_01.png\" alt=\"Benchmarks for Correctness and Human Preference \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-4\" aria-label=\"Reference 4: Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference\">[4]</a> Chiang et al. \u00b7 ICML 2024</div></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 80,
+          "function_name": "main",
+          "code": "text('## 17 \u00b7 Chatbot Arena: Voting Rules')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 17 \u00b7 Chatbot Arena: Voting Rules",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 81,
+          "function_name": "main",
+          "code": "text(story(STORIES[17][0], *STORIES[17][1]))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<section class=\"lesson-demo\" aria-label=\"Collect a blind comparison\"><h3>Collect a blind comparison</h3><p class=\"demo-kicker\">Teaching example</p><div class=\"demo-controls\"><button type=\"button\" data-frame=\"0\" aria-pressed=\"true\">Prompt</button><button type=\"button\" data-frame=\"1\" aria-pressed=\"false\">Vote</button></div><div class=\"demo-panel\" data-panel=\"0\"><p>Ask two anonymous models the same question.</p></div><div class=\"demo-panel\" data-panel=\"1\" hidden><p>Choose the better response or a tie before revealing the model identities.</p></div></section>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 82,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_17_02.png\"><img src=\"images/w12_17_02.png\" alt=\"Chatbot Arena: Voting Rules \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-4\" aria-label=\"Reference 4: Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference\">[4]</a> Chiang et al. \u00b7 ICML 2024</div></figure><article id=\"ref-4\" class=\"reference-card\"><img src=\"images/w12_17_02.png\" alt=\"\" loading=\"lazy\"><div><h3>[4] Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference</h3><p class=\"reference-meta\">Chiang et al. \u00b7 ICML 2024</p><p>Blind pairwise comparisons and preference scores.</p><div class=\"reference-links\"><a href=\"https://proceedings.mlr.press/v235/chiang24b.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_17_02.png\"><img src=\"images/w12_17_02.png\" alt=\"Chatbot Arena: Voting Rules \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-4\" aria-label=\"Reference 4: Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference\">[4]</a> Chiang et al. \u00b7 ICML 2024</div></figure><article id=\"ref-4\" class=\"reference-card\"><img src=\"images/w12_17_02.png\" alt=\"\" loading=\"lazy\"><div><h3>[4] Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference</h3><p class=\"reference-meta\">Chiang et al. \u00b7 ICML 2024</p><p>Blind pairwise comparisons and preference scores.</p><div class=\"reference-links\"><a href=\"https://proceedings.mlr.press/v235/chiang24b.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 84,
+          "function_name": "main",
+          "code": "text('## 18 \u00b7 Chatbot Arena: Scores from Pairwise Votes')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 18 \u00b7 Chatbot Arena: Scores from Pairwise Votes",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 85,
+          "function_name": "main",
+          "code": "text('Bradley-Terry (BT) model\\n- Each model m has a score \u03bem.\\n- Score differences determine the probability of winning a comparison.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Bradley-Terry (BT) model\n- Each model m has a score \u03bem.\n- Score differences determine the probability of winning a comparison.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 86,
+          "function_name": "main",
+          "code": "text('- Human vote: Ht is 0 or 1.\\n- Arena fits a Bradley-Terry coefficient, previously called an Elo score.\\n- Uncertainty depends on which model pairs receive votes.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Human vote: Ht is 0 or 1.\n- Arena fits a Bradley-Terry coefficient, previously called an Elo score.\n- Uncertainty depends on which model pairs receive votes.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 87,
+          "function_name": "main",
+          "code": "wins, losses = 6, 4"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 88,
+          "function_name": "main",
+          "code": "fitted_probability = wins / (wins + losses)  # @inspect fitted_probability"
+        }
+      ],
+      "env": {
+        "fitted_probability": {
+          "type": "float",
+          "contents": 0.6,
+          "dtype": null,
+          "shape": null
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 89,
+          "function_name": "main",
+          "code": "text(vote_demo(wins, losses, fitted_probability))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<section class=\"lesson-demo\" aria-label=\"Turn pairwise votes into an estimate\"><h3>Turn pairwise votes into an estimate</h3><p class=\"demo-kicker\">Teaching example</p><div class=\"demo-controls\"><button type=\"button\" data-frame=\"0\" aria-pressed=\"true\">Count votes</button><button type=\"button\" data-frame=\"1\" aria-pressed=\"false\">Fit a two-model score</button></div><div class=\"demo-panel\" data-panel=\"0\"><p>A wins 6 comparisons. B wins 4. This example has no ties.</p></div><div class=\"demo-panel\" data-panel=\"1\" hidden><div class=\"demo-bar\"><span>A beats B</span><span class=\"bar-track\"><span style=\"width:60.00%\"></span></span><strong>60%</strong></div><div class=\"demo-bar\"><span>B beats A</span><span class=\"bar-track\"><span style=\"width:40.00%\"></span></span><strong>40%</strong></div><p>With only this pair, the fitted win probability is A's share of decisive votes.</p></div></section>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 90,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_18_01.png\"><img src=\"images/w12_18_01.png\" alt=\"Chatbot Arena: Scores from Pairwise Votes \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-4\" aria-label=\"Reference 4: Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference\">[4]</a> Chiang et al. \u00b7 ICML 2024</div></figure>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_18_01.png\"><img src=\"images/w12_18_01.png\" alt=\"Chatbot Arena: Scores from Pairwise Votes \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-4\" aria-label=\"Reference 4: Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference\">[4]</a> Chiang et al. \u00b7 ICML 2024</div></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 92,
+          "function_name": "main",
+          "code": "text('## 19 \u00b7 The Leaderboard Illusion')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 19 \u00b7 The Leaderboard Illusion",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 93,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_19_01.png\"><img src=\"images/w12_19_01.png\" alt=\"The Leaderboard Illusion \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-5\" aria-label=\"Reference 5: The Leaderboard Illusion\">[5]</a> Singh et al. \u00b7 NeurIPS 2025 \u00b7 Datasets and Benchmarks</div></figure>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_19_01.png\"><img src=\"images/w12_19_01.png\" alt=\"The Leaderboard Illusion \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-5\" aria-label=\"Reference 5: The Leaderboard Illusion\">[5]</a> Singh et al. \u00b7 NeurIPS 2025 \u00b7 Datasets and Benchmarks</div></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 95,
+          "function_name": "main",
+          "code": "text('## 20 \u00b7 Private Testing and Selective Score Reporting')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 20 \u00b7 Private Testing and Selective Score Reporting",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 96,
+          "function_name": "main",
+          "code": "text('- Private testing lets a provider publish only its best variant.\\n- Small dots are private variants. The large dot is the published one.\\n- The paper calls for limits on variants and auditable removal rules.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Private testing lets a provider publish only its best variant.\n- Small dots are private variants. The large dot is the published one.\n- The paper calls for limits on variants and auditable removal rules.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 97,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_20_02.png\"><img src=\"images/w12_20_02.png\" alt=\"Private Testing and Selective Score Reporting \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-5\" aria-label=\"Reference 5: The Leaderboard Illusion\">[5]</a> Singh et al. \u00b7 NeurIPS 2025 \u00b7 Datasets and Benchmarks</div></figure>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_20_02.png\"><img src=\"images/w12_20_02.png\" alt=\"Private Testing and Selective Score Reporting \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-5\" aria-label=\"Reference 5: The Leaderboard Illusion\">[5]</a> Singh et al. \u00b7 NeurIPS 2025 \u00b7 Datasets and Benchmarks</div></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 99,
+          "function_name": "main",
+          "code": "text('## 21 \u00b7 Selecting the Best Variant Inflates the Score')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 21 \u00b7 Selecting the Best Variant Inflates the Score",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 100,
+          "function_name": "main",
+          "code": "text('- In this simulation, the underlying mean stays at 1200.\\n- Testing more private variants creates more chances to select a high score.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- In this simulation, the underlying mean stays at 1200.\n- Testing more private variants creates more chances to select a high score.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 101,
+          "function_name": "main",
+          "code": "scores = [0.68, 0.73, 0.69, 0.76, 0.71]"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 102,
+          "function_name": "main",
+          "code": "selected = max(scores)  # @inspect selected"
+        }
+      ],
+      "env": {
+        "selected": {
+          "type": "float",
+          "contents": 0.76,
+          "dtype": null,
+          "shape": null
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 103,
+          "function_name": "main",
+          "code": "text(selection_demo(scores, selected))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<section class=\"lesson-demo\" aria-label=\"Pick a model before or after testing?\"><h3>Pick a model before or after testing?</h3><p class=\"demo-kicker\">Teaching example</p><div class=\"demo-controls\"><button type=\"button\" data-frame=\"0\" aria-pressed=\"true\">Report all variants</button><button type=\"button\" data-frame=\"1\" aria-pressed=\"false\">Report only the winner</button></div><div class=\"demo-panel\" data-panel=\"0\"><div class=\"demo-bar\"><span>Variant 1</span><span class=\"bar-track\"><span style=\"width:68.00%\"></span></span><strong>68%</strong></div><div class=\"demo-bar\"><span>Variant 2</span><span class=\"bar-track\"><span style=\"width:73.00%\"></span></span><strong>73%</strong></div><div class=\"demo-bar\"><span>Variant 3</span><span class=\"bar-track\"><span style=\"width:69.00%\"></span></span><strong>69%</strong></div><div class=\"demo-bar\"><span>Variant 4</span><span class=\"bar-track\"><span style=\"width:76.00%\"></span></span><strong>76%</strong></div><div class=\"demo-bar\"><span>Variant 5</span><span class=\"bar-track\"><span style=\"width:71.00%\"></span></span><strong>71%</strong></div></div><div class=\"demo-panel\" data-panel=\"1\" hidden><div class=\"demo-bar\"><span>Reported best</span><span class=\"bar-track\"><span style=\"width:76.00%\"></span></span><strong>76%</strong></div><p>The maximum is selected on this test set. Use fresh data to check whether the lead holds.</p></div></section>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 104,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_21_01.png\"><img src=\"images/w12_21_01.png\" alt=\"Selecting the Best Variant Inflates the Score \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-5\" aria-label=\"Reference 5: The Leaderboard Illusion\">[5]</a> The Leaderboard Illusion, NeurIPS 2025 (Figure 7; simulation, not a live model ranking)</div></figure><article id=\"ref-5\" class=\"reference-card\"><img src=\"images/w12_21_01.png\" alt=\"\" loading=\"lazy\"><div><h3>[5] The Leaderboard Illusion</h3><p class=\"reference-meta\">Singh et al. \u00b7 NeurIPS 2025 \u00b7 Datasets and Benchmarks</p><p>Private testing and selective reporting of model variants.</p><div class=\"reference-links\"><a href=\"https://papers.nips.cc/paper_files/paper/2025/file/70a93f260a51123b3c0e33ecd1b4de97-Paper-Datasets_and_Benchmarks_Track.pdf\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_21_01.png\"><img src=\"images/w12_21_01.png\" alt=\"Selecting the Best Variant Inflates the Score \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-5\" aria-label=\"Reference 5: The Leaderboard Illusion\">[5]</a> The Leaderboard Illusion, NeurIPS 2025 (Figure 7; simulation, not a live model ranking)</div></figure><article id=\"ref-5\" class=\"reference-card\"><img src=\"images/w12_21_01.png\" alt=\"\" loading=\"lazy\"><div><h3>[5] The Leaderboard Illusion</h3><p class=\"reference-meta\">Singh et al. \u00b7 NeurIPS 2025 \u00b7 Datasets and Benchmarks</p><p>Private testing and selective reporting of model variants.</p><div class=\"reference-links\"><a href=\"https://papers.nips.cc/paper_files/paper/2025/file/70a93f260a51123b3c0e33ecd1b4de97-Paper-Datasets_and_Benchmarks_Track.pdf\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 106,
+          "function_name": "main",
+          "code": "text('## 22 \u00b7 Preference, Task Success, and Generalization')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 22 \u00b7 Preference, Task Success, and Generalization",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 107,
+          "function_name": "main",
+          "code": "text('- Preference: which answer did users like?\\n- Task success: did the agent complete the goal?\\n- Generalization: does it work on new tasks?')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Preference: which answer did users like?\n- Task success: did the agent complete the goal?\n- Generalization: does it work on new tasks?",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 108,
+          "function_name": "main",
+          "code": "text('<div class=\"lesson-cite\"><a href=\"#ref-4\" aria-label=\"Reference 4: Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference\">[4]</a> Chatbot Arena, ICML 2024; AI Agents That Matter, TMLR 2025; course synthesis</div>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<div class=\"lesson-cite\"><a href=\"#ref-4\" aria-label=\"Reference 4: Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference\">[4]</a> Chatbot Arena, ICML 2024; AI Agents That Matter, TMLR 2025; course synthesis</div>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 110,
+          "function_name": "main",
+          "code": "text('## 23 \u00b7 Judging LLM as a Judge')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 23 \u00b7 Judging LLM as a Judge",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 111,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_23_01.png\"><img src=\"images/w12_23_01.png\" alt=\"Judging LLM as a Judge \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-6\" aria-label=\"Reference 6: Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena\">[6]</a> Zheng et al. \u00b7 NeurIPS 2023</div></figure>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_23_01.png\"><img src=\"images/w12_23_01.png\" alt=\"Judging LLM as a Judge \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-6\" aria-label=\"Reference 6: Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena\">[6]</a> Zheng et al. \u00b7 NeurIPS 2023</div></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 113,
+          "function_name": "main",
+          "code": "text('## 24 \u00b7 The Default Pairwise Judge Prompt')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 24 \u00b7 The Default Pairwise Judge Prompt",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 114,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_24_02.png\"><img src=\"images/w12_24_02.png\" alt=\"The Default Pairwise Judge Prompt \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-6\" aria-label=\"Reference 6: Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena\">[6]</a> Zheng et al. \u00b7 NeurIPS 2023</div></figure><article id=\"ref-6\" class=\"reference-card\"><img src=\"images/w12_24_02.png\" alt=\"\" loading=\"lazy\"><div><h3>[6] Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena</h3><p class=\"reference-meta\">Zheng et al. \u00b7 NeurIPS 2023</p><p>Pairwise grading prompts and judge bias.</p><div class=\"reference-links\"><a href=\"https://papers.nips.cc/paper_files/paper/2023/hash/91f18a1287b398d378ef22505bf41832-Abstract-Datasets_and_Benchmarks.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_24_02.png\"><img src=\"images/w12_24_02.png\" alt=\"The Default Pairwise Judge Prompt \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-6\" aria-label=\"Reference 6: Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena\">[6]</a> Zheng et al. \u00b7 NeurIPS 2023</div></figure><article id=\"ref-6\" class=\"reference-card\"><img src=\"images/w12_24_02.png\" alt=\"\" loading=\"lazy\"><div><h3>[6] Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena</h3><p class=\"reference-meta\">Zheng et al. \u00b7 NeurIPS 2023</p><p>Pairwise grading prompts and judge bias.</p><div class=\"reference-links\"><a href=\"https://papers.nips.cc/paper_files/paper/2023/hash/91f18a1287b398d378ef22505bf41832-Abstract-Datasets_and_Benchmarks.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 116,
+          "function_name": "main",
+          "code": "text('## 25 \u00b7 Checking the Model Judge')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 25 \u00b7 Checking the Model Judge",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 117,
+          "function_name": "main",
+          "code": "text('- Start with cases that people have checked.\\n- Swap the answer order and inspect disagreements.\\n- Count false success and false failure separately.\\n- Save the rubric and the judge version.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Start with cases that people have checked.\n- Swap the answer order and inspect disagreements.\n- Count false success and false failure separately.\n- Save the rubric and the judge version.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 118,
+          "function_name": "main",
+          "code": "text(story(STORIES[25][0], *STORIES[25][1]))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<section class=\"lesson-demo\" aria-label=\"Audit a judge for order bias\"><h3>Audit a judge for order bias</h3><p class=\"demo-kicker\">Teaching example</p><div class=\"demo-controls\"><button type=\"button\" data-frame=\"0\" aria-pressed=\"true\">First order</button><button type=\"button\" data-frame=\"1\" aria-pressed=\"false\">Swap positions</button></div><div class=\"demo-panel\" data-panel=\"0\"><p>A appears first and the illustrative judge chooses A.</p></div><div class=\"demo-panel\" data-panel=\"1\" hidden><p>B appears first and the judge now chooses B. The underlying responses did not change.</p></div></section>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 119,
+          "function_name": "main",
+          "code": "text('<div class=\"lesson-cite\"><a href=\"#ref-6\" aria-label=\"Reference 6: Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena\">[6]</a> Judging LLM as a Judge with MT Bench and Chatbot Arena, NeurIPS 2023; practical synthesis</div>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<div class=\"lesson-cite\"><a href=\"#ref-6\" aria-label=\"Reference 6: Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena\">[6]</a> Judging LLM as a Judge with MT Bench and Chatbot Arena, NeurIPS 2023; practical synthesis</div>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 121,
+          "function_name": "main",
+          "code": "text('## 26 \u00b7 Autonomous Evaluation of Digital Agents')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 26 \u00b7 Autonomous Evaluation of Digital Agents",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 122,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_26_01.png\"><img src=\"images/w12_26_01.png\" alt=\"Autonomous Evaluation of Digital Agents \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-7\" aria-label=\"Reference 7: Autonomous Evaluation and Refinement of Digital Agents\">[7]</a> Pan et al. \u00b7 COLM 2024</div></figure>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_26_01.png\"><img src=\"images/w12_26_01.png\" alt=\"Autonomous Evaluation of Digital Agents \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-7\" aria-label=\"Reference 7: Autonomous Evaluation and Refinement of Digital Agents\">[7]</a> Pan et al. \u00b7 COLM 2024</div></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 124,
+          "function_name": "main",
+          "code": "text('## 27 \u00b7 Judging Task Completion from Screenshots')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 27 \u00b7 Judging Task Completion from Screenshots",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 125,
+          "function_name": "main",
+          "code": "text('- VLM = vision language model.\\n- The evaluator reads screenshots to judge whether the task finished.\\n- The paper reports higher accuracy with a more expensive evaluator.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- VLM = vision language model.\n- The evaluator reads screenshots to judge whether the task finished.\n- The paper reports higher accuracy with a more expensive evaluator.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 126,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_27_01.png\"><img src=\"images/w12_27_01.png\" alt=\"Judging Task Completion from Screenshots \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-7\" aria-label=\"Reference 7: Autonomous Evaluation and Refinement of Digital Agents\">[7]</a> Pan et al. \u00b7 COLM 2024</div></figure>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_27_01.png\"><img src=\"images/w12_27_01.png\" alt=\"Judging Task Completion from Screenshots \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-7\" aria-label=\"Reference 7: Autonomous Evaluation and Refinement of Digital Agents\">[7]</a> Pan et al. \u00b7 COLM 2024</div></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 128,
+          "function_name": "main",
+          "code": "text('## 28 \u00b7 Modular and End to End Evaluators')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 28 \u00b7 Modular and End to End Evaluators",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 129,
+          "function_name": "main",
+          "code": "text('- Modular: describe the screenshots, then ask a language model.\\n- End to end: a vision language model reads the screenshots.\\n- VLM = vision language model. LM = language model.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Modular: describe the screenshots, then ask a language model.\n- End to end: a vision language model reads the screenshots.\n- VLM = vision language model. LM = language model.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 130,
+          "function_name": "main",
+          "code": "text(story(STORIES[28][0], *STORIES[28][1]))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<section class=\"lesson-demo\" aria-label=\"Compare two ways to score a task\"><h3>Compare two ways to score a task</h3><p class=\"demo-kicker\">Teaching example</p><div class=\"demo-controls\"><button type=\"button\" data-frame=\"0\" aria-pressed=\"true\">End to end</button><button type=\"button\" data-frame=\"1\" aria-pressed=\"false\">Modular</button></div><div class=\"demo-panel\" data-panel=\"0\"><p>Give the judge the task and screenshots. Ask for a single verdict.</p></div><div class=\"demo-panel\" data-panel=\"1\" hidden><p>Extract the visible order status first. Compare that status with the success condition.</p></div></section>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 131,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_28_02.png\"><img src=\"images/w12_28_02.png\" alt=\"Modular and End to End Evaluators \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-7\" aria-label=\"Reference 7: Autonomous Evaluation and Refinement of Digital Agents\">[7]</a> Pan et al. \u00b7 COLM 2024</div></figure><article id=\"ref-7\" class=\"reference-card\"><img src=\"images/w12_28_02.png\" alt=\"\" loading=\"lazy\"><div><h3>[7] Autonomous Evaluation and Refinement of Digital Agents</h3><p class=\"reference-meta\">Pan et al. \u00b7 COLM 2024</p><p>Compare action matching with checks of completed tasks.</p><div class=\"reference-links\"><a href=\"https://openreview.net/forum?id=NPAQ6FKSmK\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a><a href=\"https://nlp.cs.berkeley.edu/pubs/Pan-Zhang-Tomlin-Zhou-Levine-Suhr_2024_Autonomous_paper.pdf\" target=\"_blank\" rel=\"noopener noreferrer\">Paper PDF \u2197</a></div></div></article>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_28_02.png\"><img src=\"images/w12_28_02.png\" alt=\"Modular and End to End Evaluators \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-7\" aria-label=\"Reference 7: Autonomous Evaluation and Refinement of Digital Agents\">[7]</a> Pan et al. \u00b7 COLM 2024</div></figure><article id=\"ref-7\" class=\"reference-card\"><img src=\"images/w12_28_02.png\" alt=\"\" loading=\"lazy\"><div><h3>[7] Autonomous Evaluation and Refinement of Digital Agents</h3><p class=\"reference-meta\">Pan et al. \u00b7 COLM 2024</p><p>Compare action matching with checks of completed tasks.</p><div class=\"reference-links\"><a href=\"https://openreview.net/forum?id=NPAQ6FKSmK\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a><a href=\"https://nlp.cs.berkeley.edu/pubs/Pan-Zhang-Tomlin-Zhou-Levine-Suhr_2024_Autonomous_paper.pdf\" target=\"_blank\" rel=\"noopener noreferrer\">Paper PDF \u2197</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 133,
+          "function_name": "main",
+          "code": "text('## 29 \u00b7 Action Matching Can Give the Wrong Ranking')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 29 \u00b7 Action Matching Can Give the Wrong Ranking",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 134,
+          "function_name": "main",
+          "code": "text('- AitW = Android in the Wild. Task: follow an instruction in a phone app.\\n- Parentheses: action matching. Bars: task success judged by each evaluator.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- AitW = Android in the Wild. Task: follow an instruction in a phone app.\n- Parentheses: action matching. Bars: task success judged by each evaluator.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 135,
+          "function_name": "main",
+          "code": "action_scores = [('Trace A', 4 / 4), ('Trace B', 2 / 4)]"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 136,
+          "function_name": "main",
+          "code": "outcome_scores = [('Trace A', 0), ('Trace B', 1)]"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 137,
+          "function_name": "main",
+          "code": "text(matching_demo(action_scores, outcome_scores))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<section class=\"lesson-demo\" aria-label=\"The scoring rule can reverse the ranking\"><h3>The scoring rule can reverse the ranking</h3><p class=\"demo-kicker\">Teaching example</p><div class=\"demo-controls\"><button type=\"button\" data-frame=\"0\" aria-pressed=\"true\">Match reference actions</button><button type=\"button\" data-frame=\"1\" aria-pressed=\"false\">Check the final state</button></div><div class=\"demo-panel\" data-panel=\"0\"><div class=\"demo-bar\"><span>Trace A</span><span class=\"bar-track\"><span style=\"width:100.00%\"></span></span><strong>100%</strong></div><div class=\"demo-bar\"><span>Trace B</span><span class=\"bar-track\"><span style=\"width:50.00%\"></span></span><strong>50%</strong></div><p>Trace A follows the expected path. Trace B uses a different route.</p></div><div class=\"demo-panel\" data-panel=\"1\" hidden><div class=\"demo-bar\"><span>Trace A</span><span class=\"bar-track\"><span style=\"width:0.00%\"></span></span><strong>0%</strong></div><div class=\"demo-bar\"><span>Trace B</span><span class=\"bar-track\"><span style=\"width:100.00%\"></span></span><strong>100%</strong></div><p>A leaves the item in the cart. B completes checkout.</p></div></section>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 138,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_29_01.png\"><img src=\"images/w12_29_01.png\" alt=\"Action Matching Can Give the Wrong Ranking \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-7\" aria-label=\"Reference 7: Autonomous Evaluation and Refinement of Digital Agents\">[7]</a> Autonomous Evaluation and Refinement of Digital Agents, COLM 2024 (Figure 2)</div></figure>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_29_01.png\"><img src=\"images/w12_29_01.png\" alt=\"Action Matching Can Give the Wrong Ranking \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-7\" aria-label=\"Reference 7: Autonomous Evaluation and Refinement of Digital Agents\">[7]</a> Autonomous Evaluation and Refinement of Digital Agents, COLM 2024 (Figure 2)</div></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 140,
+          "function_name": "main",
+          "code": "text('## 30 \u00b7 What Different Benchmarks Measure')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 30 \u00b7 What Different Benchmarks Measure",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 141,
+          "function_name": "main",
+          "code": "text('- Some benchmarks test answers to difficult questions.\\n- Others test whether an agent can finish a longer sequence of work.\\n- Evidence from one setting may not predict performance in another.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Some benchmarks test answers to difficult questions.\n- Others test whether an agent can finish a longer sequence of work.\n- Evidence from one setting may not predict performance in another.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 143,
+          "function_name": "main",
+          "code": "text(\"## 31 \u00b7 Humanity's Last Exam\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 31 \u00b7 Humanity's Last Exam",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 144,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_31_01.png\"><img src=\"images/w12_31_01.png\" alt=\"Humanity&#x27;s Last Exam \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-8\" aria-label=\"Reference 8: A benchmark of expert-level academic questions to assess AI capabilities\">[8]</a> Center for AI Safety, Scale AI &amp; HLE Contributors Consortium \u00b7 Nature 649, 1139\u20131146 (2026)</div></figure>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_31_01.png\"><img src=\"images/w12_31_01.png\" alt=\"Humanity&#x27;s Last Exam \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-8\" aria-label=\"Reference 8: A benchmark of expert-level academic questions to assess AI capabilities\">[8]</a> Center for AI Safety, Scale AI &amp; HLE Contributors Consortium \u00b7 Nature 649, 1139\u20131146 (2026)</div></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 146,
+          "function_name": "main",
+          "code": "text('## 32 \u00b7 HLE: Building the Question Set')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 32 \u00b7 HLE: Building the Question Set",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 147,
+          "function_name": "main",
+          "code": "text('- 2,500 public questions across more than 100 subjects, plus a private test set.\\n- Nearly 1,000 contributors from over 500 institutions across 50 countries.\\n- Released in January 2025 and published in Nature on 28 January 2026.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- 2,500 public questions across more than 100 subjects, plus a private test set.\n- Nearly 1,000 contributors from over 500 institutions across 50 countries.\n- Released in January 2025 and published in Nature on 28 January 2026.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 148,
+          "function_name": "main",
+          "code": "text(story(STORIES[32][0], *STORIES[32][1]))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<section class=\"lesson-demo\" aria-label=\"Screen a candidate question\"><h3>Screen a candidate question</h3><p class=\"demo-kicker\">Teaching example</p><div class=\"demo-controls\"><button type=\"button\" data-frame=\"0\" aria-pressed=\"true\">Draft</button><button type=\"button\" data-frame=\"1\" aria-pressed=\"false\">Check</button></div><div class=\"demo-panel\" data-panel=\"0\"><p>An expert writes a difficult question and a proposed answer.</p></div><div class=\"demo-panel\" data-panel=\"1\" hidden><p>Verify that the question is unambiguous, the answer is correct, and the task tests the intended skill.</p></div></section>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 149,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_32_02.png\"><img src=\"images/w12_32_02.png\" alt=\"HLE: Building the Question Set \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-8\" aria-label=\"Reference 8: A benchmark of expert-level academic questions to assess AI capabilities\">[8]</a> Center for AI Safety, Scale AI &amp; HLE Contributors Consortium \u00b7 Nature 649, 1139\u20131146 (2026)</div></figure><article id=\"ref-8\" class=\"reference-card\"><img src=\"images/w12_32_02.png\" alt=\"\" loading=\"lazy\"><div><h3>[8] A benchmark of expert-level academic questions to assess AI capabilities</h3><p class=\"reference-meta\">Center for AI Safety, Scale AI &amp; HLE Contributors Consortium \u00b7 Nature 649, 1139\u20131146 (2026)</p><p>Humanity&#x27;s Last Exam and its expert question review process.</p><div class=\"reference-links\"><a href=\"https://www.nature.com/articles/s41586-025-09962-4\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a><a href=\"https://arxiv.org/abs/2501.14249\" target=\"_blank\" rel=\"noopener noreferrer\">View preprint \u2197</a></div></div></article>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_32_02.png\"><img src=\"images/w12_32_02.png\" alt=\"HLE: Building the Question Set \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-8\" aria-label=\"Reference 8: A benchmark of expert-level academic questions to assess AI capabilities\">[8]</a> Center for AI Safety, Scale AI &amp; HLE Contributors Consortium \u00b7 Nature 649, 1139\u20131146 (2026)</div></figure><article id=\"ref-8\" class=\"reference-card\"><img src=\"images/w12_32_02.png\" alt=\"\" loading=\"lazy\"><div><h3>[8] A benchmark of expert-level academic questions to assess AI capabilities</h3><p class=\"reference-meta\">Center for AI Safety, Scale AI &amp; HLE Contributors Consortium \u00b7 Nature 649, 1139\u20131146 (2026)</p><p>Humanity&#x27;s Last Exam and its expert question review process.</p><div class=\"reference-links\"><a href=\"https://www.nature.com/articles/s41586-025-09962-4\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a><a href=\"https://arxiv.org/abs/2501.14249\" target=\"_blank\" rel=\"noopener noreferrer\">View preprint \u2197</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 151,
+          "function_name": "main",
+          "code": "text('## 33 \u00b7 HLE: Scope and Reporting Requirements')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 33 \u00b7 HLE: Scope and Reporting Requirements",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 152,
+          "function_name": "main",
+          "code": "text(\"HLE = Humanity's Last Exam\\n- Questions have verifiable answers.\\n- Report the tools, attempts, and calibration.\\n- Research workflows require additional tests.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "HLE = Humanity's Last Exam\n- Questions have verifiable answers.\n- Report the tools, attempts, and calibration.\n- Research workflows require additional tests.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 153,
+          "function_name": "main",
+          "code": "text('<div class=\"lesson-cite\"><a href=\"#ref-8\" aria-label=\"Reference 8: A benchmark of expert-level academic questions to assess AI capabilities\">[8]</a> Humanity&#x27;s Last Exam, Nature 2026; arXiv 2501.14249 (scope and limitations)</div>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<div class=\"lesson-cite\"><a href=\"#ref-8\" aria-label=\"Reference 8: A benchmark of expert-level academic questions to assess AI capabilities\">[8]</a> Humanity&#x27;s Last Exam, Nature 2026; arXiv 2501.14249 (scope and limitations)</div>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 155,
+          "function_name": "main",
+          "code": "text('## 34 \u00b7 Long Software Tasks')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 34 \u00b7 Long Software Tasks",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 156,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_34_01.png\"><img src=\"images/w12_34_01.png\" alt=\"Long Software Tasks \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-9\" aria-label=\"Reference 9: Measuring AI Ability to Complete Long Software Tasks\">[9]</a> Kwa et al. \u00b7 NeurIPS 2025</div></figure>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_34_01.png\"><img src=\"images/w12_34_01.png\" alt=\"Long Software Tasks \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-9\" aria-label=\"Reference 9: Measuring AI Ability to Complete Long Software Tasks\">[9]</a> Kwa et al. \u00b7 NeurIPS 2025</div></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 158,
+          "function_name": "main",
+          "code": "text('## 35 \u00b7 METR: Estimating the Time Horizon')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 35 \u00b7 METR: Estimating the Time Horizon",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 159,
+          "function_name": "main",
+          "code": "text('- HCAST = Human Calibrated Autonomy Software Tasks.\\n- SWAA = Software Atomic Actions. RE Bench = Research Engineering Benchmark.\\n- SWE = software engineering. R&D = research and development.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- HCAST = Human Calibrated Autonomy Software Tasks.\n- SWAA = Software Atomic Actions. RE Bench = Research Engineering Benchmark.\n- SWE = software engineering. R&D = research and development.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 160,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_35_01.png\"><img src=\"images/w12_35_01.png\" alt=\"METR: Estimating the Time Horizon \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-9\" aria-label=\"Reference 9: Measuring AI Ability to Complete Long Software Tasks\">[9]</a> Measuring AI Ability to Complete Long Software Tasks, NeurIPS 2025 (Figure 2)</div></figure>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_35_01.png\"><img src=\"images/w12_35_01.png\" alt=\"METR: Estimating the Time Horizon \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-9\" aria-label=\"Reference 9: Measuring AI Ability to Complete Long Software Tasks\">[9]</a> Measuring AI Ability to Complete Long Software Tasks, NeurIPS 2025 (Figure 2)</div></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 162,
+          "function_name": "main",
+          "code": "text('## 36 \u00b7 METR: Success Probability and Human Task Time')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 36 \u00b7 METR: Success Probability and Human Task Time",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 163,
+          "function_name": "main",
+          "code": "text('- METR = Model Evaluation and Threat Research.\\n- Horizontal axis: human task time.\\n- Vertical axis: success probability.\\n- 50% horizon: about 54 minutes.\\n- 90% reliability gives a shorter horizon.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- METR = Model Evaluation and Threat Research.\n- Horizontal axis: human task time.\n- Vertical axis: success probability.\n- 50% horizon: about 54 minutes.\n- 90% reliability gives a shorter horizon.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 164,
+          "function_name": "main",
+          "code": "minutes = list(range(0, 61, 5))"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 165,
+          "function_name": "main",
+          "code": "probabilities = [1 / (1 + (t / 30) ** 1.4) for t in minutes]"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 166,
+          "function_name": "main",
+          "code": "crossings = [t for t, p in zip(minutes, probabilities) if p <= 0.5]"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 167,
+          "function_name": "main",
+          "code": "horizon = min(crossings)  # @inspect horizon"
+        }
+      ],
+      "env": {
+        "horizon": {
+          "type": "int",
+          "contents": 30,
+          "dtype": null,
+          "shape": null
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 168,
+          "function_name": "main",
+          "code": "text(horizon_demo(minutes, probabilities, horizon))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<section class=\"lesson-demo\" aria-label=\"Read a 50% time horizon\"><h3>Read a 50% time horizon</h3><p class=\"demo-kicker\">Teaching example</p><div class=\"demo-controls\"><button type=\"button\" data-frame=\"0\" aria-pressed=\"true\">Read the axes</button><button type=\"button\" data-frame=\"1\" aria-pressed=\"false\">Find 50%</button></div><div class=\"demo-panel\" data-panel=\"0\"><svg viewBox=\"0 0 374 170\" role=\"img\" aria-label=\"Illustrative success rate falls as human task time increases\"><path d=\"M42 24V138H350\" fill=\"none\" stroke=\"currentColor\"/><polyline points=\"42.0,30.0 67.0,38.1 92.0,49.1 117.0,59.7 142.0,69.1 167.0,77.1 192.0,84.0 217.0,89.8 242.0,94.7 267.0,98.9 292.0,102.5 317.0,105.6 342.0,108.3\" fill=\"none\" stroke=\"#14776d\" stroke-width=\"3\"/><text x=\"5\" y=\"34\">100%</text><text x=\"12\" y=\"87\">50%</text><text x=\"200\" y=\"162\">Human task time (min)</text></svg><p>Each x value is how long a human takes on tasks of that difficulty.</p></div><div class=\"demo-panel\" data-panel=\"1\" hidden><svg viewBox=\"0 0 374 170\" role=\"img\" aria-label=\"Illustrative success rate falls as human task time increases\"><path d=\"M42 24V138H350\" fill=\"none\" stroke=\"currentColor\"/><polyline points=\"42.0,30.0 67.0,38.1 92.0,49.1 117.0,59.7 142.0,69.1 167.0,77.1 192.0,84.0 217.0,89.8 242.0,94.7 267.0,98.9 292.0,102.5 317.0,105.6 342.0,108.3\" fill=\"none\" stroke=\"#14776d\" stroke-width=\"3\"/><text x=\"5\" y=\"34\">100%</text><text x=\"12\" y=\"87\">50%</text><text x=\"200\" y=\"162\">Human task time (min)</text><path d=\"M42 84H192V138\" fill=\"none\" stroke=\"#a65516\" stroke-dasharray=\"4 4\"/><circle cx=\"192\" cy=\"84\" r=\"5\" fill=\"#a65516\"/><text x=\"183\" y=\"154\">30</text></svg><p>The illustrative curve crosses 50% at <strong>30 min</strong>.</p></div></section>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 169,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_36_01.png\"><img src=\"images/w12_36_01.png\" alt=\"METR: Success Probability and Human Task Time \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-9\" aria-label=\"Reference 9: Measuring AI Ability to Complete Long Software Tasks\">[9]</a> Measuring AI Ability to Complete Long Software Tasks, NeurIPS 2025 (Figure 4, selected panel)</div></figure><article id=\"ref-9\" class=\"reference-card\"><img src=\"images/w12_36_01.png\" alt=\"\" loading=\"lazy\"><div><h3>[9] Measuring AI Ability to Complete Long Software Tasks</h3><p class=\"reference-meta\">Kwa et al. \u00b7 NeurIPS 2025</p><p>Relate task success to the time a human expert needs.</p><div class=\"reference-links\"><a href=\"https://proceedings.neurips.cc/paper_files/paper/2025/hash/85069585133c4c168c865e65d72e9775-Abstract-Conference.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_36_01.png\"><img src=\"images/w12_36_01.png\" alt=\"METR: Success Probability and Human Task Time \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-9\" aria-label=\"Reference 9: Measuring AI Ability to Complete Long Software Tasks\">[9]</a> Measuring AI Ability to Complete Long Software Tasks, NeurIPS 2025 (Figure 4, selected panel)</div></figure><article id=\"ref-9\" class=\"reference-card\"><img src=\"images/w12_36_01.png\" alt=\"\" loading=\"lazy\"><div><h3>[9] Measuring AI Ability to Complete Long Software Tasks</h3><p class=\"reference-meta\">Kwa et al. \u00b7 NeurIPS 2025</p><p>Relate task success to the time a human expert needs.</p><div class=\"reference-links\"><a href=\"https://proceedings.neurips.cc/paper_files/paper/2025/hash/85069585133c4c168c865e65d72e9775-Abstract-Conference.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 171,
+          "function_name": "main",
+          "code": "text('## 37 \u00b7 Codex: Auditing Coding Benchmark Tasks')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 37 \u00b7 Codex: Auditing Coding Benchmark Tasks",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 172,
+          "function_name": "main",
+          "code": "text('- 731 public tasks. Agent assisted review: 200 broken. Human review: 249 broken.\\n- Detailed review followed screening. This is an audit of flagged tasks.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- 731 public tasks. Agent assisted review: 200 broken. Human review: 249 broken.\n- Detailed review followed screening. This is an audit of flagged tasks.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 173,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_37_01.png\"><img src=\"images/w12_37_01.png\" alt=\"Codex: Auditing Coding Benchmark Tasks \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-10\" aria-label=\"Reference 10: Separating signal from noise in coding evaluations\">[10]</a> OpenAI, Separating signal from noise in coding evaluations, Jul 2026 (original methodology figure)</div></figure><article id=\"ref-10\" class=\"reference-card\"><img src=\"images/w12_37_01.png\" alt=\"\" loading=\"lazy\"><div><h3>[10] Separating signal from noise in coding evaluations</h3><p class=\"reference-meta\">OpenAI \u00b7 2026</p><p>Audit the tasks and tests behind software benchmark scores.</p><div class=\"reference-links\"><a href=\"https://openai.com/index/separating-signal-from-noise-coding-evaluations/\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_37_01.png\"><img src=\"images/w12_37_01.png\" alt=\"Codex: Auditing Coding Benchmark Tasks \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-10\" aria-label=\"Reference 10: Separating signal from noise in coding evaluations\">[10]</a> OpenAI, Separating signal from noise in coding evaluations, Jul 2026 (original methodology figure)</div></figure><article id=\"ref-10\" class=\"reference-card\"><img src=\"images/w12_37_01.png\" alt=\"\" loading=\"lazy\"><div><h3>[10] Separating signal from noise in coding evaluations</h3><p class=\"reference-meta\">OpenAI \u00b7 2026</p><p>Audit the tasks and tests behind software benchmark scores.</p><div class=\"reference-links\"><a href=\"https://openai.com/index/separating-signal-from-noise-coding-evaluations/\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 175,
+          "function_name": "main",
+          "code": "text('## 38 \u00b7 What to Save with an Evaluation Result')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 38 \u00b7 What to Save with an Evaluation Result",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 176,
+          "function_name": "main",
+          "code": "text('- Task files and the success check.\\n- Agent, environment, budget, and baseline.\\n- Repeated runs, traces, and failure types.\\n- Grader version, calibration, and the task audit.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Task files and the success check.\n- Agent, environment, budget, and baseline.\n- Repeated runs, traces, and failure types.\n- Grader version, calibration, and the task audit.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 177,
+          "function_name": "main",
+          "code": "text(story(STORIES[38][0], *STORIES[38][1]))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<section class=\"lesson-demo\" aria-label=\"Build a reproducible record\"><h3>Build a reproducible record</h3><p class=\"demo-kicker\">Teaching example</p><div class=\"demo-controls\"><button type=\"button\" data-frame=\"0\" aria-pressed=\"true\">Score only</button><button type=\"button\" data-frame=\"1\" aria-pressed=\"false\">Evidence package</button></div><div class=\"demo-panel\" data-panel=\"0\"><p>A run reports 70% success. The denominator, budget and setup are missing.</p></div><div class=\"demo-panel\" data-panel=\"1\" hidden><p>Record task IDs, success conditions, system versions, budgets, run logs and the grader.</p></div></section>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 178,
+          "function_name": "main",
+          "code": "text('<div class=\"lesson-cite\"><a href=\"#ref-10\" aria-label=\"Reference 10: Separating signal from noise in coding evaluations\">[10]</a> Practical synthesis from the research papers and the OpenAI July 2026 audit</div>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<div class=\"lesson-cite\"><a href=\"#ref-10\" aria-label=\"Reference 10: Separating signal from noise in coding evaluations\">[10]</a> Practical synthesis from the research papers and the OpenAI July 2026 audit</div>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 180,
+          "function_name": "main",
+          "code": "text('## 39 \u00b7 Optional: TheAgentCompany')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 39 \u00b7 Optional: TheAgentCompany",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 181,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_39_01.png\"><img src=\"images/w12_39_01.png\" alt=\"Optional: TheAgentCompany \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-11\" aria-label=\"Reference 11: TheAgentCompany: Benchmarking LLM Agents on Consequential Real World Tasks\">[11]</a> Xu et al. \u00b7 NeurIPS 2025 \u00b7 Datasets and Benchmarks</div></figure>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_39_01.png\"><img src=\"images/w12_39_01.png\" alt=\"Optional: TheAgentCompany \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-11\" aria-label=\"Reference 11: TheAgentCompany: Benchmarking LLM Agents on Consequential Real World Tasks\">[11]</a> Xu et al. \u00b7 NeurIPS 2025 \u00b7 Datasets and Benchmarks</div></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 183,
+          "function_name": "main",
+          "code": "text('## 40 \u00b7 TheAgentCompany: Tasks Across Workplace Tools')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 40 \u00b7 TheAgentCompany: Tasks Across Workplace Tools",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 184,
+          "function_name": "main",
+          "code": "text('- 175 tasks in a reproducible, simulated workplace.\\n- Evaluation checks the work state and the required milestones.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- 175 tasks in a reproducible, simulated workplace.\n- Evaluation checks the work state and the required milestones.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 185,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_40_01.png\"><img src=\"images/w12_40_01.png\" alt=\"TheAgentCompany: Tasks Across Workplace Tools \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-11\" aria-label=\"Reference 11: TheAgentCompany: Benchmarking LLM Agents on Consequential Real World Tasks\">[11]</a> Xu et al. | NeurIPS 2025 | Figure 1 | Original benchmark design</div></figure><article id=\"ref-11\" class=\"reference-card\"><img src=\"images/w12_40_01.png\" alt=\"\" loading=\"lazy\"><div><h3>[11] TheAgentCompany: Benchmarking LLM Agents on Consequential Real World Tasks</h3><p class=\"reference-meta\">Xu et al. \u00b7 NeurIPS 2025 \u00b7 Datasets and Benchmarks</p><p>Workplace tasks that span tools and score intermediate milestones.</p><div class=\"reference-links\"><a href=\"https://papers.nips.cc/paper_files/paper/2025/file/0d744742f6fac4d1134c019b7cef3c8a-Paper-Datasets_and_Benchmarks_Track.pdf\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_40_01.png\"><img src=\"images/w12_40_01.png\" alt=\"TheAgentCompany: Tasks Across Workplace Tools \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-11\" aria-label=\"Reference 11: TheAgentCompany: Benchmarking LLM Agents on Consequential Real World Tasks\">[11]</a> Xu et al. | NeurIPS 2025 | Figure 1 | Original benchmark design</div></figure><article id=\"ref-11\" class=\"reference-card\"><img src=\"images/w12_40_01.png\" alt=\"\" loading=\"lazy\"><div><h3>[11] TheAgentCompany: Benchmarking LLM Agents on Consequential Real World Tasks</h3><p class=\"reference-meta\">Xu et al. \u00b7 NeurIPS 2025 \u00b7 Datasets and Benchmarks</p><p>Workplace tasks that span tools and score intermediate milestones.</p><div class=\"reference-links\"><a href=\"https://papers.nips.cc/paper_files/paper/2025/file/0d744742f6fac4d1134c019b7cef3c8a-Paper-Datasets_and_Benchmarks_Track.pdf\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 187,
+          "function_name": "main",
+          "code": "text('## 41 \u00b7 TheAgentCompany: Results by Platform and Task')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 41 \u00b7 TheAgentCompany: Results by Platform and Task",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 188,
+          "function_name": "main",
+          "code": "text('- SDE in the figure: software engineering. PM = project management.\\n- DS = data science. Admin = administration. HR = human resources.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- SDE in the figure: software engineering. PM = project management.\n- DS = data science. Admin = administration. HR = human resources.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 189,
+          "function_name": "main",
+          "code": "text('<figure class=\"lesson-figure\"><div class=\"source-table\"><table><caption>Table 1 \u00b7 OpenHands 0.28.1 with Gemini 2.5 Pro</caption><thead><tr><th scope=\\'col\\'>Scoring rule</th><th scope=\\'col\\'>Reported score</th></tr></thead><tbody><tr><td>Full task success</td><td>30.3%</td></tr><tr><td>With partial credit</td><td>39.3%</td></tr></tbody></table></div><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_41_01.png\"><img src=\"images/w12_41_01.png\" alt=\"TheAgentCompany: Results by Platform and Task \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-11\" aria-label=\"Reference 11: TheAgentCompany: Benchmarking LLM Agents on Consequential Real World Tasks\">[11]</a> Xu et al. | NeurIPS 2025 | Figure 2 | Tested model versions in the paper</div></figure>')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"source-table\"><table><caption>Table 1 \u00b7 OpenHands 0.28.1 with Gemini 2.5 Pro</caption><thead><tr><th scope='col'>Scoring rule</th><th scope='col'>Reported score</th></tr></thead><tbody><tr><td>Full task success</td><td>30.3%</td></tr><tr><td>With partial credit</td><td>39.3%</td></tr></tbody></table></div><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w12_41_01.png\"><img src=\"images/w12_41_01.png\" alt=\"TheAgentCompany: Results by Platform and Task \u00b7 image 1\"><span>Enlarge figure \u2197</span></button></div><div class=\"lesson-cite\"><a href=\"#ref-11\" aria-label=\"Reference 11: TheAgentCompany: Benchmarking LLM Agents on Consequential Real World Tasks\">[11]</a> Xu et al. | NeurIPS 2025 | Figure 2 | Tested model versions in the paper</div></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 191,
+          "function_name": "main",
+          "code": "text('## 42 \u00b7 Evaluation: Success, Fairness, and Scope')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 42 \u00b7 Evaluation: Success, Fairness, and Scope",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 192,
+          "function_name": "main",
+          "code": "text('- Define a clear success condition.\\n- Use fair comparisons and repeated runs.\\n- Check the evaluator itself.\\n- Keep the claim within the tested setting.')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Define a clear success condition.\n- Use fair comparisons and repeated runs.\n- Check the evaluator itself.\n- Keep the claim within the tested setting.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_19_full.py",
+          "line_number": 194,
+          "function_name": "main",
+          "code": "text('## 43 \u00b7 Thank you')"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 43 \u00b7 Thank you",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    }
+  ]
+}

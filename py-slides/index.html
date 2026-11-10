@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CSE 398/498 | Lecture 19</title>
+    <script>
+      const page = new URL(location.href);
+      if (!page.searchParams.has("trace")) {
+        page.searchParams.set("trace", "lecture_19_full");
+        history.replaceState(null, "", page);
+      }
+    </script>
+    <script type="module" crossorigin src="./assets/index-C7Yyog8u.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CJlPj8BE.css">
+    <link rel="stylesheet" href="./lecture.css">
+    <script defer src="./lecture.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <dialog id="figure-viewer" aria-labelledby="figure-title">
+      <div class="viewer-toolbar">
+        <strong id="figure-title">Original figure</strong>
+        <button type="button" id="close-figure">Close ×</button>
+      </div>
+      <img id="large-figure" alt="">
+      <a id="original-figure" target="_blank" rel="noopener noreferrer">Open full resolution ↗</a>
+    </dialog>
+  </body>
+</html>
