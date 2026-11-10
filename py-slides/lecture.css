@@ -165,3 +165,7 @@ body { display: block; }
 .lecture-guide kbd { padding: 0 .28em; border: 1px solid var(--rule); border-radius: 4px; }
 @media (max-width: 1160px) { .lecture-guide { margin-inline: 24px; } }
 @media (max-width: 600px) { .lecture-guide { margin-inline: 10px; } }
+
+.lesson-cite, .reference-card { font-style: italic; }
+.code-container .markdown ul { margin-block: .2em; }
+.line.cloaked .markdown li { visibility: hidden; }
