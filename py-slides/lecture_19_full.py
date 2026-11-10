@@ -1,7 +1,6 @@
 from itertools import product
 from edtrace import text
-from lesson_demos import (STORIES, story, outcome_demo, budget_demo, vote_demo,
-                          selection_demo, horizon_demo)
+from lesson_demos import outcome_demo
 
 
 def main():
@@ -107,10 +106,6 @@ def main():
     text('- LDB means Large Language Model Debugger. LATS means Language Agent Tree Search.')
     text('<figure class="lesson-figure"><div class="figure-strip"><button type="button" class="figure-thumb" data-figure="images/w12_11_01.png"><img src="images/w12_11_01.png" alt="Accuracy and Cost on HumanEval · image 1"><span>Enlarge figure ↗</span></button></div><div class="lesson-cite"><a href="#ref-3" aria-label="Reference 3: AI Agents That Matter">[3]</a> AI Agents That Matter, TMLR 2025; 2024 preprint (Figure 1; April 2024 prices; note the broken axes)</div></figure><article id="ref-3" class="reference-card"><img src="images/w12_11_01.png" alt="" loading="lazy"><div><h3>[3] AI Agents That Matter</h3><p class="reference-meta">Kapoor et al. · TMLR 2025</p><p>Cost, simple baselines, holdout sets, and reliable agent comparisons.</p><div class="reference-links"><a href="https://openreview.net/forum?id=Zy4uFzMviZ" target="_blank" rel="noopener noreferrer">Open source ↗</a><a href="https://arxiv.org/abs/2407.01502" target="_blank" rel="noopener noreferrer">View preprint ↗</a></div></div></article>')
     text('Look for points near the upper left. Several simple baselines reach similar accuracy to more expensive agent methods in this comparison.')
-    text('The small example below uses invented costs to show how a fixed budget can change which system we choose.')
-    runs = [('A', 0.70, 2), ('B', 0.80, 9)]  # accuracy and cents per task
-    eligible = [(name, score) for name, score, cents in runs if cents <= 5]
-    text(budget_demo([(name, score) for name, score, _ in runs], eligible))
     text('Cost tells us what we paid for the measured accuracy. It still does not tell us whether the method works beyond the tasks used to build it. Next we check what was kept separate for testing.')
 
     text('## 12 · Testing on New Tasks')
@@ -122,7 +117,6 @@ def main():
     text('<figure class="lesson-figure"><div class="figure-strip"><button type="button" class="figure-thumb" data-figure="images/w12_12_02.png"><img src="images/w12_12_02.png" alt="Test Sets and Claims About Generalization · image 1"><span>Enlarge figure ↗</span></button></div><div class="lesson-cite"><a href="#ref-3" aria-label="Reference 3: AI Agents That Matter">[3]</a> Kapoor et al. · TMLR 2025</div></figure>')
     text('Read the middle column before the counts. It says what needs to be new for each kind of claim. Many surveyed benchmarks lacked that kind of test.')
     text('Now we can ask whether a disappointing result comes from the agent, the task, or the way we ran the test.')
-    text(story(STORIES[12][0], *STORIES[12][1]))
 
     text('## 13 · Why Did the Run Fail?')
     text('Suppose a tool call fails. The agent might have sent the wrong arguments. The service might also have been unavailable. A single failure count hides that difference.')
@@ -164,17 +158,13 @@ def main():
     text('One vote is a comparison between two answers. The next step combines many comparisons into model scores.')
 
     text('## 18 · From Votes to Scores')
-    text('A model that wins six of ten votes against one opponent has a 60% win share in those votes. A leaderboard has many opponents, so we need to combine the comparisons.')
+    text("A leaderboard combines votes across many model pairs. We need to account for which models were compared, rather than treating every model's raw win share as directly comparable.")
     text('The **Bradley–Terry model** assigns each model a score. The difference between two scores gives a predicted chance that one wins.')
     text('- Equal scores give a predicted win chance of 50%.')
     text('- A larger score difference gives the higher-scoring model a larger predicted chance of winning.')
     text("- In the equation, ξ labels a model's score. H marks the observed winner of a comparison.")
     text('<figure class="lesson-figure"><div class="figure-strip"><button type="button" class="figure-thumb" data-figure="images/w12_18_01.png"><img src="images/w12_18_01.png" alt="Chatbot Arena: Scores from Pairwise Votes · image 1"><span>Enlarge figure ↗</span></button></div><div class="lesson-cite"><a href="#ref-4" aria-label="Reference 4: Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference">[4]</a> Chiang et al. · ICML 2024</div></figure>')
-    text('The two-model calculation below illustrates the win share. The full leaderboard fits scores across many pairs, and rankings are less certain when evidence is sparse.')
-    text('The Python example uses six wins and four losses with no ties. It computes a 60% win share. A real leaderboard fits scores across many model pairs.')
-    wins, losses = 6, 4
-    fitted_probability = wins / (wins + losses)  # @inspect fitted_probability
-    text(vote_demo(wins, losses, fitted_probability))  # @clear fitted_probability
+    text('The leaderboard fits scores across many pairs. Rankings are less certain when some pairs have few comparisons.')
     text('So far, we have asked how to turn recorded votes into scores. The next paper asks an earlier question: **which model versions get recorded and shown to the public?**')
 
     text('## 19 · *The Leaderboard Illusion*')
@@ -197,10 +187,6 @@ def main():
     text('- The rising curve shows how the reported score can increase through selection.')
     text('<figure class="lesson-figure"><div class="figure-strip"><button type="button" class="figure-thumb" data-figure="images/w12_21_01.png"><img src="images/w12_21_01.png" alt="Selecting the Best Variant Inflates the Score · image 1"><span>Enlarge figure ↗</span></button></div><div class="lesson-cite"><a href="#ref-5" aria-label="Reference 5: The Leaderboard Illusion">[5]</a> The Leaderboard Illusion, NeurIPS 2025 (Figure 7; simulation, not a live model ranking)</div></figure><article id="ref-5" class="reference-card"><img src="images/w12_21_01.png" alt="" loading="lazy"><div><h3>[5] The Leaderboard Illusion</h3><p class="reference-meta">Singh et al. · NeurIPS 2025 · Datasets and Benchmarks</p><p>Private testing and selective reporting of model variants.</p><div class="reference-links"><a href="https://papers.nips.cc/paper_files/paper/2025/file/70a93f260a51123b3c0e33ecd1b4de97-Paper-Datasets_and_Benchmarks_Track.pdf" target="_blank" rel="noopener noreferrer">Open source ↗</a></div></div></article>')
     text('More testing creates more chances to pick a high observed score. A fresh test helps check whether the selected model keeps its lead.')
-    text("The small Python example below shows the selection operation with invented scores. It uses a different scale from the paper's simulation.")
-    scores = [0.68, 0.73, 0.69, 0.76, 0.71]
-    selected = max(scores)  # @inspect selected
-    text(selection_demo(scores, selected))  # @clear selected
     text('After selecting a version, test it on fresh cases to see whether its lead remains. We can now return to the larger question: what kind of claim does a leaderboard score actually support?')
 
     text('## 22 · What Does the Score Tell Us?')
@@ -231,8 +217,6 @@ def main():
     text('- For a pass/fail grader, count wrongly passed tasks and wrongly failed tasks separately.')
     text('- Save the judge model, prompt, and scoring rule with the results.')
     text('<div class="lesson-cite"><a href="#ref-6" aria-label="Reference 6: Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena">[6]</a> Judging LLM as a Judge with MT Bench and Chatbot Arena, NeurIPS 2023; practical synthesis</div>')
-    text('Keep the answers fixed and switch their order. The example judge always picks the first answer, exposing the mistake we want to catch.')
-    text(story(STORIES[25][0], *STORIES[25][1]))
     text("So far, the judge has compared text. Next we give it evidence of an agent's actions so it can check whether a task was completed.")
 
     text('## 26 · Grading Digital Agents')
@@ -312,13 +296,7 @@ def main():
     text('- Move down to read the time. The marked estimate is about 54 minutes.')
     text('- If we require 90% success, the crossing occurs at a shorter task duration.')
     text('<figure class="lesson-figure"><div class="figure-strip"><button type="button" class="figure-thumb" data-figure="images/w12_36_01.png"><img src="images/w12_36_01.png" alt="METR: Success Probability and Human Task Time · image 1"><span>Enlarge figure ↗</span></button></div><div class="lesson-cite"><a href="#ref-9" aria-label="Reference 9: Measuring AI Ability to Complete Long Software Tasks">[9]</a> Measuring AI Ability to Complete Long Software Tasks, NeurIPS 2025 (Figure 4, selected panel)</div></figure><article id="ref-9" class="reference-card"><img src="images/w12_36_01.png" alt="" loading="lazy"><div><h3>[9] Measuring AI Ability to Complete Long Software Tasks</h3><p class="reference-meta">Kwa et al. · NeurIPS 2025</p><p>Relate task success to the time a human expert needs.</p><div class="reference-links"><a href="https://proceedings.neurips.cc/paper_files/paper/2025/hash/85069585133c4c168c865e65d72e9775-Abstract-Conference.html" target="_blank" rel="noopener noreferrer">Open source ↗</a></div></div></article>')
-    text('The time measures how long a human needs for the task. The agent may take a different amount of time.')
-    text('The Python example below draws an invented curve with a 30-minute crossing. Use it to practice reading the axes. The measured 54-minute result is in the original figure above.')
-    minutes = list(range(0, 61, 5))
-    probabilities = [1 / (1 + (t / 30) ** 1.4) for t in minutes]
-    crossings = [t for t, p in zip(minutes, probabilities) if p <= 0.5]
-    horizon = min(crossings)  # @inspect horizon
-    text(horizon_demo(minutes, probabilities, horizon))  # @clear horizon
+    text('The time measures how long a human needs for the task. The agent may take a different amount of time. The marked estimate in the original figure is about 54 minutes.')
     text('That leads to another evaluation problem: what if the coding task or its test is wrong? The next audit examines the benchmark itself rather than assuming every failed check is an agent failure.')
 
     text('## 37 · Checking Coding Tasks')
