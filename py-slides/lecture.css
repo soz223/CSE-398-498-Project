@@ -167,5 +167,16 @@ body { display: block; }
 @media (max-width: 600px) { .lecture-guide { margin-inline: 10px; } }
 
 .lesson-cite, .reference-card { font-style: italic; }
-.code-container .markdown ul { margin-block: .2em; }
-.line.cloaked .markdown li { visibility: hidden; }
+
+.line .markdown { line-height: 1.7; }
+.line .markdown ul { margin-block: .22em; padding-left: 1em; }
+.line:has(.markdown):not(:has(ul, ol)) { margin-bottom: 1.25em; }
+.line:has(.markdown :is(ul, ol)) + .line:has(.markdown):not(:has(ul, ol)) {
+  margin-top: 1.35em;
+}
+
+.line.cloaked { opacity: 1; }
+.line.cloaked .markdown,
+.line.cloaked .markdown :is(h1, h2, h3, a, .lesson-cite, .reference-meta) {
+  color: #65717b;
+}
