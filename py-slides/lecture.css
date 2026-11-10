@@ -170,7 +170,8 @@ body { display: block; }
 
 .line .markdown { line-height: 1.7; }
 .line:has(.markdown h2) { scroll-margin-top: 110px; }
-.line .markdown ul { margin-block: .08em; padding-left: 1em; }
+.line .markdown ul { margin-block: .08em; padding-left: 1em; list-style-position: outside; }
+.line .markdown li > p { margin: .2em 0; }
 .line:has(.markdown):not(:has(ul, ol)) { margin-bottom: .65em; }
 .line:has(.markdown):not(:has(ul, ol)):has(+ .line .markdown :is(ul, ol)) {
   margin-bottom: .1em;
