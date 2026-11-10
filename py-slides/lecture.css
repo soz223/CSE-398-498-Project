@@ -181,5 +181,5 @@ body { display: block; }
 .line.cloaked { opacity: 1; }
 .line.cloaked .markdown,
 .line.cloaked .markdown :is(h1, h2, h3, a, .lesson-cite, .reference-meta) {
-  color: #65717b;
+  color: #737e87;
 }
