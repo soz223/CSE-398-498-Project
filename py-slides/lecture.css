@@ -169,10 +169,13 @@ body { display: block; }
 .lesson-cite, .reference-card { font-style: italic; }
 
 .line .markdown { line-height: 1.7; }
-.line .markdown ul { margin-block: .22em; padding-left: 1em; }
-.line:has(.markdown):not(:has(ul, ol)) { margin-bottom: 1.25em; }
+.line .markdown ul { margin-block: .08em; padding-left: 1em; }
+.line:has(.markdown):not(:has(ul, ol)) { margin-bottom: .65em; }
+.line:has(.markdown):not(:has(ul, ol)):has(+ .line .markdown :is(ul, ol)) {
+  margin-bottom: .1em;
+}
 .line:has(.markdown :is(ul, ol)) + .line:has(.markdown):not(:has(ul, ol)) {
-  margin-top: 1.35em;
+  margin-top: .8em;
 }
 
 .line.cloaked { opacity: 1; }
