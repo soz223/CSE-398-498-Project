@@ -171,7 +171,7 @@ def main():
     text("- In the equation, ξ labels a model's score. H marks the observed winner of a comparison.")
     text('<figure class="lesson-figure"><div class="figure-strip"><button type="button" class="figure-thumb" data-figure="images/w12_18_01.png"><img src="images/w12_18_01.png" alt="Chatbot Arena: Scores from Pairwise Votes · image 1"><span>Enlarge figure ↗</span></button></div><div class="lesson-cite"><a href="#ref-4" aria-label="Reference 4: Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference">[4]</a> Chiang et al. · ICML 2024</div></figure>')
     text('The two-model calculation below illustrates the win share. The full leaderboard fits scores across many pairs, and rankings are less certain when evidence is sparse.')
-    text('That calculation assumes we know which models were tested. Next we will look at what happens when only selected versions are reported.')
+    text('The Python example uses six wins and four losses with no ties. It computes a 60% win share. A real leaderboard fits scores across many model pairs.')
     wins, losses = 6, 4
     fitted_probability = wins / (wins + losses)  # @inspect fitted_probability
     text(vote_demo(wins, losses, fitted_probability))  # @clear fitted_probability
