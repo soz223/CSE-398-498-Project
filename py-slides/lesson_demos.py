@@ -74,15 +74,6 @@ def selection_demo(scores, selected):
     ])
 
 
-def matching_demo(action_scores, outcome_scores):
-    return demo("The scoring rule can reverse the ranking", [
-        ("Match reference actions", bars(action_scores)
-         + "<p>Trace A follows the expected path. Trace B uses a different route.</p>"),
-        ("Check the final state", bars(outcome_scores)
-         + "<p>A leaves the item in the cart. B completes checkout.</p>"),
-    ])
-
-
 def horizon_demo(minutes, probabilities, horizon):
     points = " ".join(f"{42 + t * 5:.1f},{138 - p * 108:.1f}"
                       for t, p in zip(minutes, probabilities))
@@ -106,14 +97,6 @@ def horizon_demo(minutes, probabilities, horizon):
 
 
 STORIES = {
-    3: ("Check a booking cancellation", (
-        ("Agent reply", 'The agent says: “Your booking has been cancelled.”'),
-        ("Booking record", "The record still reads ACTIVE. The task failed under a state-based check."),
-    )),
-    5: ("Apply the policy before acting", (
-        ("Request", "The user asks to cancel a nonrefundable ticket outside the allowed window."),
-        ("Expected behavior", "Explain the policy and leave the reservation unchanged."),
-    )),
     8: ("Remove one source of difficulty", (
         ("Default", "The agent must coordinate with a user and decide how to finish the task."),
         ("No user", "The agent can take the user's actions directly. Planning is still required."),
@@ -125,7 +108,7 @@ STORIES = {
         ("Compare", "Compare the more elaborate agent with a baseline that has a similar budget."),
     )),
     12: ("What is held out?", (
-        ("New instance", "Change the booking details and keep the task type."),
+        ("New instance", "Test fresh instances while keeping the same task type."),
         ("New task", "Keep the environment and test a different goal."),
         ("New environment", "Change the tool or interface. The claim now needs broader evidence."),
     )),

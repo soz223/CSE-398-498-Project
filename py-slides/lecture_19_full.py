@@ -1,7 +1,7 @@
 from itertools import product
 from edtrace import text
 from lesson_demos import (STORIES, story, outcome_demo, budget_demo, vote_demo,
-                          selection_demo, matching_demo, horizon_demo)
+                          selection_demo, horizon_demo)
 
 
 def main():
@@ -25,15 +25,15 @@ def main():
     text('- Compare expert questions, software work, and office tasks. Ask which one matches the work you want an agent to do.')
 
     text('## 03 · What Is Task Success?')
-    text('Before counting successes, write down the goal. Our example is **cancel booking A and keep booking B**.')
-    text('- The agent says it canceled A. Both bookings are still active. The task failed.')
-    text('- Booking A is canceled, but booking B is also canceled. The task failed.')
-    text('- Booking A is canceled and booking B is still active. The task passed.')
-    text('The check needs to cover both the requested change and the thing we asked the agent to keep. This is our success rule for one run.')
+    text('**Task success needs a clear definition before we compare agents.** The definition depends on the requested outcome and the rules of the environment.')
+    text('- Specify the outcome the agent must achieve.')
+    text('- Include constraints, such as policies and limits on permitted actions.')
+    text('- Choose evidence that can establish completion: environment state, tests, or a checked answer.')
+    text("An agent's final message and its action sequence provide evidence, but neither alone guarantees that the task was completed.")
     text('<div class="lesson-cite"><a href="#ref-1" aria-label="Reference 1: τ²-Bench: Evaluating Conversational Agents in a Dual-Control Environment">[1]</a> Course synthesis grounded in tau squared benchmark task evaluation, ICML 2026</div>')
 
     text('## 04 · *τ²-Bench*')
-    text('Our first example gives us a success rule. To test many requests, we need tasks, policies, tools, and repeatable runs. **This is why we introduce τ²-Bench**, a customer support benchmark with a simulated customer.')
+    text('To evaluate agents systematically, a benchmark needs tasks, policies, tools, and repeatable runs. **τ²-Bench studies customer support**, including tasks that require coordination between an agent and a simulated customer.')
     text('- The agent reads a request and uses tools to check or change records.')
     text('- Retail tasks involve orders and returns. Airline tasks involve bookings.')
     text('- Phone support adds another difficulty. The customer can change phone settings while the agent uses support tools.')
@@ -44,8 +44,8 @@ def main():
     text('Next, we will look at one airline task to see how the benchmark decides whether a run passed.')
 
     text('## 05 · When an Agent Should Say No')
-    text('Earlier, leaving booking A active meant failure because cancellation was allowed. Here the policy does not allow it. **The same unchanged booking can now be the correct result.** The agent should refuse and explain why.')
-    text('The original task record and JSON excerpt show how this expectation is recorded. We need the policy before deciding what success means.')
+    text('This real airline task from the *τ²-Bench* repository asks for a cancellation that the policy does not allow. The expected behavior is to refuse the request and explain why.')
+    text('**Success is defined by the task and its policy.** The original record and JSON excerpt show how the benchmark records the expected refusal.')
     text('<figure class="lesson-figure"><div class="figure-strip"><button type="button" class="figure-thumb" data-figure="images/w12_05_02.png"><img src="images/w12_05_02.png" alt="Success Can Mean Refusing an Invalid Action · image 1"><span>Enlarge figure ↗</span></button></div><div class="lesson-cite"><a href="#ref-2" aria-label="Reference 2: τ²-Bench Airline Tasks">[2]</a> Sierra Research · Benchmark repository</div></figure><article id="ref-2" class="reference-card"><img src="images/w12_05_02.png" alt="" loading="lazy"><div><h3>[2] τ²-Bench Airline Tasks</h3><p class="reference-meta">Sierra Research · Benchmark repository</p><p>Task records and success criteria for the airline domain.</p><div class="reference-links"><a href="https://github.com/sierra-research/tau2-bench/blob/main/data/tau2/domains/airline/tasks.json" target="_blank" rel="noopener noreferrer">Open source ↗</a></div></div></article>')
     text('<div class="source-code"><strong>Airline task 0 · JSON excerpt</strong><pre><code>{\n  &quot;id&quot;: &quot;0&quot;,\n  &quot;evaluation_criteria&quot;: {\n    &quot;actions&quot;: [],\n    &quot;communicate_info&quot;: [],\n    &quot;nl_assertions&quot;: [\n      &quot;Agent should refuse to proceed with the cancellation.&quot;\n    ],\n    &quot;reward_basis&quot;: [\n      &quot;DB&quot;,\n      &quot;COMMUNICATE&quot;\n    ]\n  }\n}</code></pre></div>')
     text('- DB refers to checks of the database state. COMMUNICATE refers to required information given to the user.')
@@ -53,8 +53,8 @@ def main():
     text('**An allowed result is part of task success.** Once we can grade one run, we can ask whether the agent gets it right again.')
 
     text('## 06 · One Win or Every Run?')
-    text('Reset the booking before each run. Give the agent the same request four times. Suppose it correctly refuses three times and wrongly cancels once.')
-    text('That result answers two different questions.')
+    text('The same agent can produce different outcomes on repeated runs. *τ²-Bench* therefore measures success across multiple attempts of each task.')
+    text('Two metrics answer different questions about those attempts.')
     text('- **pass@k** asks whether at least one of k attempts succeeds. This matters when we can try again and identify a successful result.')
     text('- **pass^k** asks whether all k attempts succeed. This matters when every customer needs the right result on their own attempt.')
     text('At k = 1, both score one attempt. As k grows, the two questions become quite different.')
@@ -115,7 +115,7 @@ def main():
 
     text('## 12 · Testing on New Tasks')
     text('An agent may work well on the tasks used to build it. To find out what it can do next, keep some cases separate for testing. These are **held-out cases**.')
-    text('- If the claim is about more bookings of the same kind, test fresh booking details.')
+    text('- If the claim concerns new instances of a familiar task, hold out fresh instances.')
     text('- If the claim is about new tasks, hold out whole task types.')
     text('- If the claim is about new domains, test a different kind of environment.')
     text("The paper reviews 17 benchmarks. Its table compares the breadth of each benchmark's claim with what it holds out.")
@@ -134,14 +134,14 @@ def main():
     text('<div class="lesson-cite"><a href="#ref-3" aria-label="Reference 3: AI Agents That Matter">[3]</a> AI Agents That Matter, TMLR 2025; 2024 preprint (Section 6); practical synthesis</div>')
 
     text('## 14 · Votes, Judges, and Outcomes')
-    text('**Who decides whether the result is good?** A booking record is easy to check. Two explanations of a research paper may both be correct, but one may be easier to read.')
+    text('**Who decides whether the result is good?** Some tasks have an outcome that can be checked directly. Open responses may require judgment about clarity, usefulness, or correctness.')
     text('- A direct check asks whether the requested state or answer is correct.')
     text('- A human vote asks which answer a person prefers.')
     text('- A model judge reads the task and result, then applies a grading rule.')
     text('We will start with human votes in *Chatbot Arena*, then examine the rankings and the use of model judges.')
 
     text('## 15 · *Chatbot Arena*')
-    text('Booking records and code tests can establish a correct outcome. An explanation may have several good versions. **How do we compare answers when usefulness depends on the reader?** *Chatbot Arena* collects human preferences for this purpose.')
+    text("Direct checks work when the required outcome is clearly specified. Open responses can have several useful versions. **How do we compare them from the user's perspective?** *Chatbot Arena* collects human preferences for this purpose.")
     text('This lets the evaluation include prompts chosen by users. The score reflects the preferences and prompts collected on the platform.')
     text('Before reading the ranking, we need to understand what a vote measures and how it is collected.')
     text('<figure class="lesson-figure"><div class="figure-strip"><button type="button" class="figure-thumb" data-figure="images/w12_15_01.png"><img src="images/w12_15_01.png" alt="Chatbot Arena · image 1"><span>Enlarge figure ↗</span></button></div><div class="lesson-cite"><a href="#ref-4" aria-label="Reference 4: Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference">[4]</a> Chiang et al. · ICML 2024</div></figure>')
@@ -261,11 +261,7 @@ def main():
     text('- The bars show completed tasks according to human and model graders.')
     text('<figure class="lesson-figure"><div class="figure-strip"><button type="button" class="figure-thumb" data-figure="images/w12_29_01.png"><img src="images/w12_29_01.png" alt="Action Matching Can Give the Wrong Ranking · image 1"><span>Enlarge figure ↗</span></button></div><div class="lesson-cite"><a href="#ref-7" aria-label="Reference 7: Autonomous Evaluation and Refinement of Digital Agents">[7]</a> Autonomous Evaluation and Refinement of Digital Agents, COLM 2024 (Figure 2)</div></figure>')
     text('The two measures give different pictures of performance. Read the task outcome before treating a high action matching score as success.')
-    text('The checkout example below shows how the scoring rule changes the ranking.')
-    action_scores = [('Trace A', 4 / 4), ('Trace B', 2 / 4)]
-    outcome_scores = [('Trace A', 0), ('Trace B', 1)]
-    text(matching_demo(action_scores, outcome_scores))
-    text('**This returns us to the opening booking example:** saying done, following plausible steps, and completing the task are different pieces of evidence. Next we ask which kinds of tasks to include in an evaluation.')
+    text('**Action matching and task completion measure different things.** The paper compares them to show why an evaluation should check the intended outcome. We next examine the kinds of tasks different benchmarks cover.')
 
     text('## 30 · Differences Between Benchmarks')
     text('**Choose tasks that match the job.** We now know how graders can change a result. Even a careful grader can only tell us about the tasks we give it.')
@@ -364,7 +360,6 @@ def main():
     text('For example, the tested systems do worse on ownCloud than on Plane. Office tasks can be hard because an agent must use the interface and gather the right information.')
     text('Table 1 in the paper also reports 30.3% full success and a 39.3% score with partial credit for OpenHands with Gemini 2.5 Pro. The second number counts intermediate progress too.')
     text('Read each score together with its rule. Credit for finding a file and credit for completing the requested analysis answer different questions.')
-    text('This brings us back to the booking example. Decide what the whole request requires before calling the task a success.')
 
     text('## 42 · Four Checks for a Score')
     text('**Before using an agent score, trace it back to the work.**')
