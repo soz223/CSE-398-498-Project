@@ -55,3 +55,40 @@ function addChapterMenu() {
 
 new MutationObserver(addChapterMenu).observe(root, {childList: true, subtree: true});
 addChapterMenu();
+
+let lectureTrace;
+let environmentFrame;
+
+function updateEnvironmentScope() {
+  environmentFrame = undefined;
+  const panel = root.querySelector('.env-panel');
+  if (!panel || !lectureTrace) return;
+  const stepIndex = Number(new URL(location.href).searchParams.get('step') || 0);
+  const step = lectureTrace.steps[stepIndex];
+  const values = Object.entries(step?.env || {}).filter(([, value]) => value !== null);
+  const sourceLine = step?.stack?.at(-1)?.line_number;
+  const line = [...root.querySelectorAll('.line-number')]
+    .find(element => Number(element.textContent.trim()) === sourceLine)?.closest('.line');
+  const bounds = line?.getBoundingClientRect();
+  const headerBottom = root.querySelector('.header')?.getBoundingClientRect().bottom || 0;
+  const visible = values.length > 0 && bounds && bounds.bottom > headerBottom && bounds.top < innerHeight;
+  const display = visible ? '' : 'none';
+  if (panel.style.display !== display) panel.style.display = display;
+  for (const row of panel.querySelectorAll('tr')) {
+    const label = row.querySelector('td')?.textContent.trim();
+    const hidden = !values.some(([name]) => label === name);
+    if (row.hidden !== hidden) row.hidden = hidden;
+  }
+}
+
+function scheduleEnvironmentScope() {
+  if (environmentFrame === undefined) environmentFrame = requestAnimationFrame(updateEnvironmentScope);
+}
+
+fetch(new URL('var/traces/lecture_19_full.json', document.baseURI), {cache: 'no-store'})
+  .then(response => response.json())
+  .then(trace => { lectureTrace = trace; scheduleEnvironmentScope(); });
+new MutationObserver(scheduleEnvironmentScope).observe(root, {childList: true, subtree: true, attributes: true});
+addEventListener('scroll', scheduleEnvironmentScope, {passive: true, capture: true});
+addEventListener('resize', scheduleEnvironmentScope);
+addEventListener('popstate', scheduleEnvironmentScope);
