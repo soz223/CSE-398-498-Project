@@ -6,17 +6,28 @@
     <title>CSE 398/498 | Lecture 19</title>
     <script>
       const page = new URL(location.href);
+      const directory = page.pathname.replace(/\/index\.html$/, "/").replace(/\/?$/, "/");
+      page.pathname = directory;
+      const base = document.createElement("base");
+      base.href = new URL(directory, page.origin).href;
+      document.head.append(base);
       if (!page.searchParams.has("trace")) {
         page.searchParams.set("trace", "lecture_19_full");
-        history.replaceState(null, "", page);
       }
+      history.replaceState(null, "", page);
     </script>
     <script type="module" crossorigin src="./assets/viewer-pages.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-CJlPj8BE.css">
-    <link rel="stylesheet" href="./lecture.css">
+    <link rel="stylesheet" href="./lecture.css?v=2">
     <script defer src="./lecture.js"></script>
   </head>
   <body>
+    <aside class="lecture-guide" aria-label="How to use these slides">
+      <h1>Agent Evaluation and Benchmarks</h1>
+      <h2>How to use these slides</h2>
+      <p>Use <strong>Jump to section</strong> to browse. Select the sun icon to turn on step by step presentation mode, then use <kbd>←</kbd> and <kbd>→</kbd> or the arrow buttons to move between steps.</p>
+      <p>Use the buttons inside a demo to change its results. Click a figure to enlarge it and press <kbd>Esc</kbd> to close it.</p>
+    </aside>
     <div id="root"></div>
     <dialog id="figure-viewer" aria-labelledby="figure-title">
       <div class="viewer-toolbar">

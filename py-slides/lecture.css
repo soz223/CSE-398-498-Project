@@ -147,3 +147,21 @@ body { display: block; }
   .reference-card img { width: 66px; height: 54px; }
 }
 @media (prefers-reduced-motion: reduce) { .demo-panel.entered { animation: none; } }
+
+
+.lecture-guide {
+  box-sizing: border-box;
+  max-width: 1112px;
+  margin: 20px auto 12px;
+  padding: 16px 20px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--surface);
+  font: 15px/1.5 system-ui, sans-serif;
+}
+.lecture-guide h1 { margin: 0 0 6px; font-size: 1.4rem; }
+.lecture-guide h2 { margin: 0; font-size: 1rem; }
+.lecture-guide p { margin: 5px 0 0; color: var(--muted); }
+.lecture-guide kbd { padding: 0 .28em; border: 1px solid var(--rule); border-radius: 4px; }
+@media (max-width: 1160px) { .lecture-guide { margin-inline: 24px; } }
+@media (max-width: 600px) { .lecture-guide { margin-inline: 10px; } }
