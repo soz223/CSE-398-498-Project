@@ -134,8 +134,8 @@ STORIES = {
         ("Vote", "Choose the better response or a tie before revealing the model identities."),
     )),
     25: ("Audit a judge for order bias", (
-        ("First order", "A appears first and the illustrative judge chooses A."),
-        ("Swap positions", "B appears first and the judge now chooses B. The underlying responses did not change."),
+        ("First order", "Question: What is 2 + 2? Answer A says 4. Answer B says 5. Our faulty example judge picks the first answer, A."),
+        ("Swap positions", "Answer B now appears first and A appears second. Their text is unchanged. The same faulty judge picks B, which is wrong. It followed the position instead of checking the answer."),
     )),
     28: ("Compare two ways to score a task", (
         ("End to end", "Give the judge the task and screenshots. Ask for a single verdict."),
