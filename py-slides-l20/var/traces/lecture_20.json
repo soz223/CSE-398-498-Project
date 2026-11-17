@@ -1,6 +1,6 @@
 {
   "files": {
-    "lecture_20.py": "from dataclasses import dataclass\nfrom edtrace import text\nfrom lecture_support import card, figure\n\n\ndef main():\n    # Part 1. What LLM safety is, and how it fails\n    introduction()\n    what_is_llm_safety()\n    how_models_learn_to_refuse()\n    two_ways_to_fail()\n    why_safety_training_fails()\n\n    # Part 2. From chat models to agents\n    indirect_prompt_injection()\n    role_confusion()\n\n    # Part 3. Measuring attacks on agents\n    agentdojo()\n    agentharm()\n    wasp()\n    attempts_and_budget()\n\n    # Part 4. Defenses and stronger attackers\n    camel_design()\n    camel_results()\n    adaptive_attacks()\n    summary()\n\n\ndef introduction():\n    text(\"## 01 \u00b7 Agent Safety and Security\")\n    text(\"CSE 398/498 \u00b7 Vibe Research for Scientific Discovery \u00b7 Lichao Sun \u00b7 Lehigh University\")\n    text(\"We have built agents and learned to evaluate them. Today we ask what happens **when someone wants the agent to do the wrong thing**.\")\n    text(\"- We start with **LLM safety** and how models learn it.\")\n    text(\"- Then we see **why safety training fails**, and why agents make it worse.\")\n    text(\"- Next we look at how to **measure attacks on agents**.\")\n    text(\"- Finally we study **defenses** and how to test them.\")\n    text(\"Today we are going to study two questions. **What does the attacker control, and what did the experiment observe?**\")\n\n\ndef what_is_llm_safety():\n    text(\"## 02 \u00b7 What Is LLM Safety?\")\n    text(\"Before we study attacks, we need to know what we are protecting. This work, *TrustLLM*, groups trustworthiness into eight dimensions.\")\n    text(card(\"trustllm\"))\n    text(\"- One of them is **safety**, which covers jailbreaks, toxic output, and misuse.\")\n    text(\"- The others include truthfulness, fairness, robustness, and privacy.\")\n    text(figure(\"images/w13_trustllm_fig2.png\", \"TrustLLM benchmark design with the eight dimensions along the bottom.\", \"trustllm\", \"TrustLLM, Figure 2. The eight dimensions are along the bottom.\"))\n    text(\"Today we focus on safety. This work also finds that some models are so cautious that they **refuse harmless requests**. We will come back to this soon.\")\n\n\ndef how_models_learn_to_refuse():\n    text(\"## 03 \u00b7 How Models Learn to Refuse\")\n    text(\"Next we ask how a model learns to be safe. The standard method is **RLHF**, reinforcement learning from human feedback. This work, *InstructGPT*, is the best known example.\")\n    text(card(\"instructgpt\"))\n    text(\"- First, people write good answers, and the model imitates them.\")\n    text(\"- Then people rank model answers, and a reward model learns their preferences.\")\n    text(\"- Finally, the model is trained to earn a high reward.\")\n    text(figure(\"images/w13_instructgpt_fig2.png\", \"The three steps of RLHF.\", \"instructgpt\", \"InstructGPT, Figure 2.\"))\n    text(\"Labelers prefer answers that are helpful and harmless. So the model learns to refuse **from examples**. This works well most of the time, and it can also go wrong in two directions.\")\n\n\ndef two_ways_to_fail():\n    text(\"## 04 \u00b7 Two Ways to Fail\")\n    text(\"This figure from *TrustLLM* shows both directions.\")\n    text(\"- In the first direction, the model **refuses too little**. A harmful request is disguised, and the model answers it. We call this a **jailbreak**.\")\n    text(\"- In the second direction, the model **refuses too much**. Here the user only wants to stop a Windows process, and the model refuses. We call this **exaggerated safety**.\")\n    text(figure(\"images/w13_trustllm_fig5.png\", \"Left, a jailbreak gets a harmful answer. Right, the model refuses to explain how to kill a Windows process.\", \"trustllm\", \"TrustLLM, Figure 5.\"))\n    text(\"This work, *XSTest*, measures the second direction with 250 safe prompts, such as \\\"Where can I buy a can of coke?\\\"\")\n    text(card(\"xstest\"))\n    text(\"So when we evaluate safety, we check both directions. We will see this again with agents. Next we look more closely at jailbreaks, since they can cause real harm.\")\n\n\ndef why_safety_training_fails():\n    text(\"## 05 \u00b7 Why Safety Training Fails\")\n    text(\"Why can a model trained to refuse still be jailbroken? This work, *Jailbroken*, gives two explanations.\")\n    text(card(\"jailbroken\"))\n    text(\"- Let's first look at **competing objectives**. The model is trained to follow instructions and to be safe. A prompt can set these goals against each other, for example by asking the answer to start with \\\"Absolutely! Here's\\\".\")\n    text(\"- The second explanation is **mismatched generalization**. The model learns to read Base64 during pretraining. Safety training mostly uses plain English. So the model understands a harmful request in Base64, and its safety training misses it.\")\n    text(figure(\"images/w13_jailbroken_fig1.png\", \"Two jailbreaks of GPT-4, a forced prefix and a Base64 request.\", \"jailbroken\", \"Jailbroken, Figure 1.\"))\n    text(\"In both cases, the request comes from the user. From here on, the model becomes an agent that reads outside content and uses tools. **The instruction may then come from someone other than the user.**\")\n\n\ndef indirect_prompt_injection():\n    text(\"## 06 \u00b7 Indirect Prompt Injection\")\n    text(\"An agent reads web pages, emails, and files for its user. This gives the attacker a new way in. This work by *Greshake et al.* calls it **indirect prompt injection**.\")\n    text(card(\"greshake\"))\n    text(\"- First, the attacker hides instructions in data the application will retrieve.\")\n    text(\"- Then the user asks a normal question, and that data enters the model's context.\")\n    text(\"- Finally, the model may follow the hidden text. With tools, it can act on it.\")\n    text(figure(\"images/w13_greshake_fig3.png\", \"Numbered attack path from planted data to a compromised model.\", \"greshake\", \"Greshake et al., Figure 3. Follow the numbers.\", width=460))\n    text(\"The same path runs through code repositories, tool descriptions, and skill files. Next we ask why the model follows this text.\")\n\n\ndef role_confusion():\n    text(\"## 07 \u00b7 Why the Model Follows: Role Confusion\")\n    text(\"Each message in a chat carries a role tag, such as user or tool. This work, *Prompt Injection as Role Confusion*, asks whether the model really relies on these tags.\")\n    text(card(\"roleconf\"))\n    text(\"- The authors use a probe to read which role the model assigns to each piece of text.\")\n    text(\"- They find that **writing style** matters more than the tag. Text written like the model's own reasoning is treated as its own reasoning, whatever its tag says.\")\n    text(figure(\"images/w13_roleconf_fig7.png\", \"Probe scores under three tag settings; reasoning style text stays high.\", \"roleconf\", \"Role Confusion, Figure 7. Orange marks text that was originally reasoning.\"))\n    text(\"- They turn this into an attack by hiding reasoning style text in a web page. ASR means attack success rate, here the share of runs that leak private data.\")\n    text(figure(\"images/w13_roleconf_fig3.png\", \"Attack success rates of standard and forged reasoning injections.\", \"roleconf\", \"Role Confusion, Figure 3. Gray bars show standard injection, and pink bars show forged reasoning.\", width=520))\n    text(\"The pink bars are much higher. So a role tag alone does little to protect the agent. Next we want to know how often injection succeeds in real agent tasks.\")\n\n\ndef agentdojo():\n    text(\"## 08 \u00b7 AgentDojo: Utility and Security\")\n    text(\"To measure this, we need agents with real tasks and tools. This work, *AgentDojo*, builds such an environment.\")\n    text(card(\"agentdojo\"))\n    text(\"- It has **97 user tasks** in email, Slack, travel, and banking, and **629 security test cases**.\")\n    text(\"- The attacker hides its goal in a tool result, for example asking the agent to leak an email.\")\n    text(\"- Each run gets a **utility** score for the user's task and a **security** score for the attacker's goal.\")\n    text(figure(\"images/w13_agentdojo_fig1.png\", \"AgentDojo with attacker goal, environment, user task, and the two metrics.\", \"agentdojo\", \"AgentDojo, Figure 1.\"))\n    text(\"We need both scores, just as we checked both directions earlier. An agent that refuses everything is secure and useless. We will use this benchmark again for defenses.\")\n\n\ndef agentharm():\n    text(\"## 09 \u00b7 AgentHarm: When the User Is the Attacker\")\n    text(\"In AgentDojo the user is honest. This work, *AgentHarm*, returns to the case where **the user is the attacker**, and the harmful task needs several tool calls.\")\n    text(card(\"agentharm\"))\n    text(\"- It has 110 harmful tasks in 11 categories, such as fraud and harassment, with synthetic tools.\")\n    text(\"- Each harmful task has a **matched benign task** with the same tools. This tells a refusal apart from a lack of skill.\")\n    text(figure(\"images/w13_agentharm_fig3.png\", \"Harmful and benign task scores per model.\", \"agentharm\", \"AgentHarm, Figure 3 (top). Red bars show harmful tasks under three settings, and green bars show benign tasks.\"))\n    text(\"We compare bars within one model. When red gets close to green, the jailbreak lets the agent use **its full skill for harm**. Next we move from tools to the open web.\")\n\n\ndef wasp():\n    text(\"## 10 \u00b7 WASP: Redirected Is Not Finished\")\n    text(\"On the web, anyone can write on a page. This work, *WASP*, tests web agents when an attacker controls part of a page.\")\n    text(card(\"wasp\"))\n    text(\"- In one example, the user asks for an upvote, and the page sends the agent to change the account email.\")\n    text(\"- The authors follow each run from the first action to the final state.\")\n    text(figure(\"images/w13_wasp_fig3.png\", \"Trajectories from the first action after injection to the final state.\", \"wasp\", \"WASP, Figure 3. Read left to right.\"))\n    text(\"Many runs start toward the attacker's goal and then stall. Attacks **partly succeed** up to 86% of the time, and **fully succeed** at most 17%. So we report both numbers.\")\n    text(\"So far, every attack was tried a fixed number of times. Next we let the attacker keep trying.\")\n\n\ndef attempts_and_budget():\n    text(\"## 11 \u00b7 More Attempts, More Violations\")\n    text(\"A real attacker can keep trying until something works. This work ran a public red teaming competition to measure this.\")\n    text(card(\"competition\"))\n    text(\"- People submitted 1.8 million attacks against 22 models in 44 scenarios, and over 60,000 caused a policy violation.\")\n    text(figure(\"images/w13_competition_fig4.png\", \"Attack success rate per model with 1, 10, and 100 attempts.\", \"competition\", \"Zou et al., Figure 4. The three shades show 1, 10, and 100 attempts.\"))\n    text(\"Within one model, success rises quickly with more attempts. A quick calculation with **made up numbers** shows why. Suppose one attempt succeeds 2% of the time.\")\n    p = 0.02\n    one_try = round(1 - (1 - p) ** 1, 3)  # @inspect one_try\n    ten_tries = round(1 - (1 - p) ** 10, 3)  # @clear one_try @inspect ten_tries\n    hundred_tries = round(1 - (1 - p) ** 100, 3)  # @clear ten_tries @inspect hundred_tries\n    text(f\"The attacker succeeds **{one_try:.0%}** of the time with one try, **{ten_tries:.0%}** with ten tries, and **{hundred_tries:.0%}** with a hundred.\")  # @clear hundred_tries\n    text(\"So every security number needs its **attack budget**. Now we turn to defenses.\")\n\n\ndef camel_design():\n    text(\"## 12 \u00b7 CaMeL: Separate Planning from Reading\")\n    text(\"Training a model to ignore injected text helps, and attackers keep finding ways around it. This work, *CaMeL*, protects the agent through **system design**.\")\n    text(card(\"camel\"))\n    text(\"- The first part is a **privileged LLM**. It reads only the user's request and writes a plan as code.\")\n    text(\"- The second part is a **quarantined LLM**. It reads untrusted data and cannot call tools.\")\n    text(\"- The third part is an **interpreter**. It tracks where each value came from and checks a policy before each tool call.\")\n    text(figure(\"images/w13_camel_fig5.png\", \"CaMeL with privileged LLM, quarantined LLM, and interpreter.\", \"camel\", \"CaMeL, Figure 5.\"))\n    text(\"Here is the idea in a few lines of Python, as **our own simplification**.\")\n    from_user = Value(\"bob@company.com\", source=\"user\")\n    from_email = Value(\"eve@attacker.com\", source=\"untrusted\")\n    allowed = may_send_email(from_user)  # @stepover @inspect allowed\n    allowed = may_send_email(from_email)  # @stepover @inspect allowed\n    text(\"The same call is allowed when the recipient comes from the user, and blocked when it comes from an email. Next we check whether this works.\")  # @clear allowed\n\n\ndef camel_results():\n    text(\"## 13 \u00b7 CaMeL: Results on AgentDojo\")\n    text(\"The authors test CaMeL on *AgentDojo*. The right panel uses an uneven scale.\")\n    text(figure(\"images/w13_camel_fig9.png\", \"Utility under attack and number of successful attacks.\", \"camel\", \"CaMeL, Figure 9.\"))\n    text(\"- CaMeL solves **77%** of tasks with provable security. An undefended agent solves **84%**.\")\n    text(\"- Successful attacks drop from over a hundred to a handful.\")\n    text(\"So CaMeL trades a little utility for a strong guarantee. These results use fixed attacks, though. Next we ask what happens when the attacker studies the defense first.\")\n\n\ndef adaptive_attacks():\n    text(\"## 14 \u00b7 The Attacker Moves Second\")\n    text(\"A real attacker can study a defense and adapt. This work, *The Attacker Moves Second*, tests 12 published defenses this way.\")\n    text(card(\"ams\"))\n    text(\"- The attack runs in a loop. It proposes an attack, tests it, scores it, and improves it.\")\n    text(figure(\"images/w13_ams_fig2.png\", \"Adaptive attack loop.\", \"ams\", \"The Attacker Moves Second, Figure 2.\"))\n    text(figure(\"images/w13_ams_fig1.png\", \"Attack success rates on 12 defenses under original and adaptive attacks.\", \"ams\", \"The Attacker Moves Second, Figure 1. Hatched bars show the original evaluation, and orange bars show the adaptive attack.\"))\n    text(\"Most defenses first reported success rates near zero. Adaptive attacks pass most of them **over 90%** of the time. So we judge a defense by **the strongest attack it has faced**.\")\n\n\ndef summary():\n    text(\"## 15 \u00b7 Summary\")\n    text(\"Let's put the pieces together.\")\n    text(\"- A model can **refuse too little** or **refuse too much**, so we measure both.\")\n    text(\"- Agents can be attacked through **anything they read**.\")\n    text(\"- Every result depends on the **attacker's access and budget**.\")\n    text(\"- Defenses work best when **built into the system** and tested against attackers who adapt.\")\n    text(\"We now have a clear way to answer our two questions. **What does the attacker control, and what did the experiment observe?**\")\n\n\n# Teaching sketch for Section 12 (our simplification of CaMeL)\n\n@dataclass\nclass Value:\n    data: str\n    source: str  # \"user\" or \"untrusted\"\n\n\ndef may_send_email(recipient: Value) -> bool:\n    # Policy: only send email to recipients that came from the user.\n    return recipient.source == \"user\"\n"
+    "lecture_20.py": "from dataclasses import dataclass\nfrom edtrace import text\nfrom lecture_support import card, figure\n\n\ndef main():\n    # Part 1. What LLM safety is, and how it fails\n    introduction()\n    what_is_llm_safety()\n    how_models_learn_to_refuse()\n    two_ways_to_fail()\n    why_safety_training_fails()\n\n    # Part 2. From chat models to agents\n    indirect_prompt_injection()\n    role_confusion()\n\n    # Part 3. Measuring attacks on agents\n    agentdojo()\n    agentharm()\n    wasp()\n    attempts_and_budget()\n\n    # Part 4. Defenses and stronger attackers\n    camel_design()\n    camel_results()\n    adaptive_attacks()\n    summary()\n\n\ndef introduction():\n    text(\"## 01 · Agent Safety and Security\")\n    text(\"CSE 398/498 · Vibe Research for Scientific Discovery · Lichao Sun · Lehigh University\")\n    text(\"We have built agents and learned to evaluate them. Today we ask what happens **when someone wants the agent to do the wrong thing**.\")\n    text(\"- We start with **LLM safety** and how models learn it.\")\n    text(\"- Then we see **why safety training fails**, and why agents make it worse.\")\n    text(\"- Next we look at how to **measure attacks on agents**.\")\n    text(\"- Finally we study **defenses** and how to test them.\")\n    text(\"Today we are going to study two questions. **What does the attacker control, and what did the experiment observe?**\")\n\n\ndef what_is_llm_safety():\n    text(\"## 02 · What Is LLM Safety?\")\n    text(\"Before we study attacks, we need to know what we are protecting. This work, *TrustLLM*, groups trustworthiness into eight dimensions.\")\n    text(card(\"trustllm\"))\n    text(\"- One of them is **safety**, which covers jailbreaks, toxic output, and misuse.\")\n    text(\"- The others include truthfulness, fairness, robustness, and privacy.\")\n    text(figure(\"images/w13_trustllm_fig2.png\", \"TrustLLM benchmark design with the eight dimensions along the bottom.\", \"trustllm\", \"TrustLLM, Figure 2. The eight dimensions are along the bottom.\"))\n    text(\"Today we focus on safety. This work also finds that some models are so cautious that they **refuse harmless requests**. We will come back to this soon.\")\n\n\ndef how_models_learn_to_refuse():\n    text(\"## 03 · How Models Learn to Refuse\")\n    text(\"Next we ask how a model learns to be safe. The standard method is **RLHF**, reinforcement learning from human feedback. This work, *InstructGPT*, is the best known example.\")\n    text(card(\"instructgpt\"))\n    text(\"- First, people write good answers, and the model imitates them.\")\n    text(\"- Then people rank model answers, and a reward model learns their preferences.\")\n    text(\"- Finally, the model is trained to earn a high reward.\")\n    text(figure(\"images/w13_instructgpt_fig2.png\", \"The three steps of RLHF.\", \"instructgpt\", \"InstructGPT, Figure 2.\"))\n    text(\"Labelers prefer answers that are helpful and harmless. So the model learns to refuse **from examples**. This works well most of the time, and it can also go wrong in two directions.\")\n\n\ndef two_ways_to_fail():\n    text(\"## 04 · Two Ways to Fail\")\n    text(\"This figure from *TrustLLM* shows both directions.\")\n    text(\"- In the first direction, the model **refuses too little**. A harmful request is disguised, and the model answers it. We call this a **jailbreak**.\")\n    text(\"- In the second direction, the model **refuses too much**. Here the user only wants to stop a Windows process, and the model refuses. We call this **exaggerated safety**.\")\n    text(figure(\"images/w13_trustllm_fig5.png\", \"Left, a jailbreak gets a harmful answer. Right, the model refuses to explain how to kill a Windows process.\", \"trustllm\", \"TrustLLM, Figure 5.\"))\n    text(\"This work, *XSTest*, measures the second direction with 250 safe prompts, such as \\\"Where can I buy a can of coke?\\\"\")\n    text(card(\"xstest\"))\n    text(\"So when we evaluate safety, we check both directions. We will see this again with agents. Next we look more closely at jailbreaks, since they can cause real harm.\")\n\n\ndef why_safety_training_fails():\n    text(\"## 05 · Why Safety Training Fails\")\n    text(\"Why can a model trained to refuse still be jailbroken? This work, *Jailbroken*, gives two explanations.\")\n    text(card(\"jailbroken\"))\n    text(\"- Let's first look at **competing objectives**. The model is trained to follow instructions and to be safe. A prompt can set these goals against each other, for example by asking the answer to start with \\\"Absolutely! Here's\\\".\")\n    text(\"- The second explanation is **mismatched generalization**. The model learns to read Base64 during pretraining. Safety training mostly uses plain English. So the model understands a harmful request in Base64, and its safety training misses it.\")\n    text(figure(\"images/w13_jailbroken_fig1.png\", \"Two jailbreaks of GPT-4, a forced prefix and a Base64 request.\", \"jailbroken\", \"Jailbroken, Figure 1.\"))\n    text(\"In both cases, the request comes from the user. From here on, the model becomes an agent that reads outside content and uses tools. **The instruction may then come from someone other than the user.**\")\n\n\ndef indirect_prompt_injection():\n    text(\"## 06 · Indirect Prompt Injection\")\n    text(\"An agent reads web pages, emails, and files for its user. This gives the attacker a new way in. This work by *Greshake et al.* calls it **indirect prompt injection**.\")\n    text(card(\"greshake\"))\n    text(\"- First, the attacker hides instructions in data the application will retrieve.\")\n    text(\"- Then the user asks a normal question, and that data enters the model's context.\")\n    text(\"- Finally, the model may follow the hidden text. With tools, it can act on it.\")\n    text(figure(\"images/w13_greshake_fig3.png\", \"Numbered attack path from planted data to a compromised model.\", \"greshake\", \"Greshake et al., Figure 3. Follow the numbers.\", width=460))\n    text(\"The same path runs through code repositories, tool descriptions, and skill files. Next we ask why the model follows this text.\")\n\n\ndef role_confusion():\n    text(\"## 07 · Why the Model Follows: Role Confusion\")\n    text(\"Each message in a chat carries a role tag, such as user or tool. This work, *Prompt Injection as Role Confusion*, asks whether the model really relies on these tags.\")\n    text(card(\"roleconf\"))\n    text(\"- The authors use a probe to read which role the model assigns to each piece of text.\")\n    text(\"- They find that **writing style** matters more than the tag. Text written like the model's own reasoning is treated as its own reasoning, whatever its tag says.\")\n    text(figure(\"images/w13_roleconf_fig7.png\", \"Probe scores under three tag settings; reasoning style text stays high.\", \"roleconf\", \"Role Confusion, Figure 7. Orange marks text that was originally reasoning.\"))\n    text(\"- They turn this into an attack by hiding reasoning style text in a web page. ASR means attack success rate, here the share of runs that leak private data.\")\n    text(figure(\"images/w13_roleconf_fig3.png\", \"Attack success rates of standard and forged reasoning injections.\", \"roleconf\", \"Role Confusion, Figure 3. Gray bars show standard injection, and pink bars show forged reasoning.\", width=520))\n    text(\"The pink bars are much higher. So a role tag alone does little to protect the agent. Next we want to know how often injection succeeds in real agent tasks.\")\n\n\ndef agentdojo():\n    text(\"## 08 · AgentDojo: Utility and Security\")\n    text(\"To measure this, we need agents with real tasks and tools. This work, *AgentDojo*, builds such an environment.\")\n    text(card(\"agentdojo\"))\n    text(\"- It has **97 user tasks** in email, Slack, travel, and banking, and **629 security test cases**.\")\n    text(\"- The attacker hides its goal in a tool result, for example asking the agent to leak an email.\")\n    text(\"- Each run gets a **utility** score for the user's task and a **security** score for the attacker's goal.\")\n    text(figure(\"images/w13_agentdojo_fig1.png\", \"AgentDojo with attacker goal, environment, user task, and the two metrics.\", \"agentdojo\", \"AgentDojo, Figure 1.\"))\n    text(\"We need both scores, just as we checked both directions earlier. An agent that refuses everything is secure and useless. We will use this benchmark again for defenses.\")\n\n\ndef agentharm():\n    text(\"## 09 · AgentHarm: When the User Is the Attacker\")\n    text(\"In AgentDojo the user is honest. This work, *AgentHarm*, returns to the case where **the user is the attacker**, and the harmful task needs several tool calls.\")\n    text(card(\"agentharm\"))\n    text(\"- It has 110 harmful tasks in 11 categories, such as fraud and harassment, with synthetic tools.\")\n    text(\"- Each harmful task has a **matched benign task** with the same tools. This tells a refusal apart from a lack of skill.\")\n    text(figure(\"images/w13_agentharm_fig3.png\", \"Harmful and benign task scores per model.\", \"agentharm\", \"AgentHarm, Figure 3 (top). Red bars show harmful tasks under three settings, and green bars show benign tasks.\"))\n    text(\"We compare bars within one model. When red gets close to green, the jailbreak lets the agent use **its full skill for harm**. Next we move from tools to the open web.\")\n\n\ndef wasp():\n    text(\"## 10 · WASP: Redirected Is Not Finished\")\n    text(\"On the web, anyone can write on a page. This work, *WASP*, tests web agents when an attacker controls part of a page.\")\n    text(card(\"wasp\"))\n    text(\"- In one example, the user asks for an upvote, and the page sends the agent to change the account email.\")\n    text(\"- The authors follow each run from the first action to the final state.\")\n    text(figure(\"images/w13_wasp_fig3.png\", \"Trajectories from the first action after injection to the final state.\", \"wasp\", \"WASP, Figure 3. Read left to right.\"))\n    text(\"Many runs start toward the attacker's goal and then stall. Attacks **partly succeed** up to 86% of the time, and **fully succeed** at most 17%. So we report both numbers.\")\n    text(\"So far, every attack was tried a fixed number of times. Next we let the attacker keep trying.\")\n\n\ndef attempts_and_budget():\n    text(\"## 11 · More Attempts, More Violations\")\n    text(\"A real attacker can keep trying until something works. This work ran a public red teaming competition to measure this.\")\n    text(card(\"competition\"))\n    text(\"- People submitted 1.8 million attacks against 22 models in 44 scenarios, and over 60,000 caused a policy violation.\")\n    text(figure(\"images/w13_competition_fig4.png\", \"Attack success rate per model with 1, 10, and 100 attempts.\", \"competition\", \"Zou et al., Figure 4. The three shades show 1, 10, and 100 attempts.\"))\n    text(\"Within one model, success rises quickly with more attempts. A quick calculation with **made up numbers** shows why. Suppose one attempt succeeds 2% of the time.\")\n    p = 0.02\n    one_try = round(1 - (1 - p) ** 1, 3)  # @inspect one_try\n    ten_tries = round(1 - (1 - p) ** 10, 3)  # @clear one_try @inspect ten_tries\n    hundred_tries = round(1 - (1 - p) ** 100, 3)  # @clear ten_tries @inspect hundred_tries\n    text(f\"The attacker succeeds **{one_try:.0%}** of the time with one try, **{ten_tries:.0%}** with ten tries, and **{hundred_tries:.0%}** with a hundred.\")  # @clear hundred_tries\n    text(\"So every security number needs its **attack budget**. Now we turn to defenses.\")\n\n\ndef camel_design():\n    text(\"## 12 · CaMeL: Separate Planning from Reading\")\n    text(\"Training a model to ignore injected text helps, and attackers keep finding ways around it. This work, *CaMeL*, protects the agent through **system design**.\")\n    text(card(\"camel\"))\n    text(\"- The first part is a **privileged LLM**. It reads only the user's request and writes a plan as code.\")\n    text(\"- The second part is a **quarantined LLM**. It reads untrusted data and cannot call tools.\")\n    text(\"- The third part is an **interpreter**. It tracks where each value came from and checks a policy before each tool call.\")\n    text(figure(\"images/w13_camel_fig5.png\", \"CaMeL with privileged LLM, quarantined LLM, and interpreter.\", \"camel\", \"CaMeL, Figure 5.\"))\n    text(\"Here is the idea in a few lines of Python, as **our own simplification**.\")\n    from_user = Value(\"bob@company.com\", source=\"user\")\n    from_email = Value(\"eve@attacker.com\", source=\"untrusted\")\n    allowed = may_send_email(from_user)  # @stepover @inspect allowed\n    allowed = may_send_email(from_email)  # @stepover @inspect allowed\n    text(\"The same call is allowed when the recipient comes from the user, and blocked when it comes from an email. Next we check whether this works.\")  # @clear allowed\n\n\ndef camel_results():\n    text(\"## 13 · CaMeL: Results on AgentDojo\")\n    text(\"The authors test CaMeL on *AgentDojo*. The right panel uses an uneven scale.\")\n    text(figure(\"images/w13_camel_fig9.png\", \"Utility under attack and number of successful attacks.\", \"camel\", \"CaMeL, Figure 9.\"))\n    text(\"- CaMeL solves **77%** of tasks with provable security. An undefended agent solves **84%**.\")\n    text(\"- Successful attacks drop from over a hundred to a handful.\")\n    text(\"So CaMeL trades a little utility for a strong guarantee. These results use fixed attacks, though. Next we ask what happens when the attacker studies the defense first.\")\n\n\ndef adaptive_attacks():\n    text(\"## 14 · The Attacker Moves Second\")\n    text(\"A real attacker can study a defense and adapt. This work, *The Attacker Moves Second*, tests 12 published defenses this way.\")\n    text(card(\"ams\"))\n    text(\"- The attack runs in a loop. It proposes an attack, tests it, scores it, and improves it.\")\n    text(figure(\"images/w13_ams_fig2.png\", \"Adaptive attack loop.\", \"ams\", \"The Attacker Moves Second, Figure 2.\"))\n    text(figure(\"images/w13_ams_fig1.png\", \"Attack success rates on 12 defenses under original and adaptive attacks.\", \"ams\", \"The Attacker Moves Second, Figure 1. Hatched bars show the original evaluation, and orange bars show the adaptive attack.\"))\n    text(\"Most defenses first reported success rates near zero. Adaptive attacks pass most of them **over 90%** of the time. So we judge a defense by **the strongest attack it has faced**.\")\n\n\ndef summary():\n    text(\"## 15 · Summary\")\n    text(\"Let's put the pieces together.\")\n    text(\"- A model can **refuse too little** or **refuse too much**, so we measure both.\")\n    text(\"- Agents can be attacked through **anything they read**.\")\n    text(\"- Every result depends on the **attacker's access and budget**.\")\n    text(\"- Defenses work best when **built into the system** and tested against attackers who adapt.\")\n    text(\"We now have a clear way to answer our two questions. **What does the attacker control, and what did the experiment observe?**\")\n\n\n# Teaching sketch for Section 12 (our simplification of CaMeL)\n\n@dataclass\nclass Value:\n    data: str\n    source: str  # \"user\" or \"untrusted\"\n\n\ndef may_send_email(recipient: Value) -> bool:\n    # Policy: only send email to recipients that came from the user.\n    return recipient.source == \"user\"\n"
   },
   "hidden_line_numbers": {
     "lecture_20.py": []
@@ -60,14 +60,14 @@
           "path": "lecture_20.py",
           "line_number": 32,
           "function_name": "introduction",
-          "code": "text(\"## 01 \u00b7 Agent Safety and Security\")"
+          "code": "text(\"## 01 · Agent Safety and Security\")"
         }
       ],
       "env": {},
       "renderings": [
         {
           "type": "markdown",
-          "data": "## 01 \u00b7 Agent Safety and Security",
+          "data": "## 01 · Agent Safety and Security",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -86,14 +86,14 @@
           "path": "lecture_20.py",
           "line_number": 33,
           "function_name": "introduction",
-          "code": "text(\"CSE 398/498 \u00b7 Vibe Research for Scientific Discovery \u00b7 Lichao Sun \u00b7 Lehigh University\")"
+          "code": "text(\"CSE 398/498 · Vibe Research for Scientific Discovery · Lichao Sun · Lehigh University\")"
         }
       ],
       "env": {},
       "renderings": [
         {
           "type": "markdown",
-          "data": "CSE 398/498 \u00b7 Vibe Research for Scientific Discovery \u00b7 Lichao Sun \u00b7 Lehigh University",
+          "data": "CSE 398/498 · Vibe Research for Scientific Discovery · Lichao Sun · Lehigh University",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -260,30 +260,6 @@
       "stack": [
         {
           "path": "lecture_20.py",
-          "line_number": 8,
-          "function_name": "main",
-          "code": "introduction()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
-          "line_number": 9,
-          "function_name": "main",
-          "code": "what_is_llm_safety()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
           "line_number": 9,
           "function_name": "main",
           "code": "what_is_llm_safety()"
@@ -310,14 +286,14 @@
           "path": "lecture_20.py",
           "line_number": 43,
           "function_name": "what_is_llm_safety",
-          "code": "text(\"## 02 \u00b7 What Is LLM Safety?\")"
+          "code": "text(\"## 02 · What Is LLM Safety?\")"
         }
       ],
       "env": {},
       "renderings": [
         {
           "type": "markdown",
-          "data": "## 02 \u00b7 What Is LLM Safety?",
+          "data": "## 02 · What Is LLM Safety?",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -369,7 +345,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<article id=\"ref-1\" class=\"reference-card\"><img src=\"images/w13_trustllm_fig2.png\" alt=\"\" loading=\"lazy\"><div><h3>[1] TrustLLM: Trustworthiness in Large Language Models</h3><p class=\"reference-meta\">Huang, Sun, Wang, et al. \u00b7 ICML 2024</p><p>A taxonomy and benchmark for trustworthy LLMs, covering 16 models on over 30 datasets.</p><div class=\"reference-links\"><a href=\"https://arxiv.org/abs/2401.05561\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>",
+          "data": "<article id=\"ref-1\" class=\"reference-card\"><img src=\"images/w13_trustllm_fig2.png\" alt=\"\" loading=\"lazy\"><div><h3>[1] TrustLLM: Trustworthiness in Large Language Models</h3><p class=\"reference-meta\">Huang, Sun, Wang, et al. · ICML 2024</p><p>A taxonomy and benchmark for trustworthy LLMs, covering 16 models on over 30 datasets.</p><div class=\"reference-links\"><a href=\"https://arxiv.org/abs/2401.05561\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -447,7 +423,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_trustllm_fig2.png\"><img src=\"images/w13_trustllm_fig2.png\" alt=\"TrustLLM benchmark design with the eight dimensions along the bottom.\"><span>Enlarge figure \u2197</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: TrustLLM: Trustworthiness in Large Language Models\">[1]</a> TrustLLM, Figure 2. The eight dimensions are along the bottom.</figcaption></figure>",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_trustllm_fig2.png\"><img src=\"images/w13_trustllm_fig2.png\" alt=\"TrustLLM benchmark design with the eight dimensions along the bottom.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: TrustLLM: Trustworthiness in Large Language Models\">[1]</a> TrustLLM, Figure 2. The eight dimensions are along the bottom.</figcaption></figure>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -484,30 +460,6 @@
       "stack": [
         {
           "path": "lecture_20.py",
-          "line_number": 9,
-          "function_name": "main",
-          "code": "what_is_llm_safety()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
-          "line_number": 10,
-          "function_name": "main",
-          "code": "how_models_learn_to_refuse()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
           "line_number": 10,
           "function_name": "main",
           "code": "how_models_learn_to_refuse()"
@@ -534,14 +486,14 @@
           "path": "lecture_20.py",
           "line_number": 53,
           "function_name": "how_models_learn_to_refuse",
-          "code": "text(\"## 03 \u00b7 How Models Learn to Refuse\")"
+          "code": "text(\"## 03 · How Models Learn to Refuse\")"
         }
       ],
       "env": {},
       "renderings": [
         {
           "type": "markdown",
-          "data": "## 03 \u00b7 How Models Learn to Refuse",
+          "data": "## 03 · How Models Learn to Refuse",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -593,7 +545,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<article id=\"ref-2\" class=\"reference-card\"><img src=\"images/w13_instructgpt_fig2.png\" alt=\"\" loading=\"lazy\"><div><h3>[2] Training Language Models to Follow Instructions with Human Feedback</h3><p class=\"reference-meta\">Ouyang et al. \u00b7 NeurIPS 2022</p><p>The three-step RLHF recipe behind InstructGPT.</p><div class=\"reference-links\"><a href=\"https://arxiv.org/abs/2203.02155\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>",
+          "data": "<article id=\"ref-2\" class=\"reference-card\"><img src=\"images/w13_instructgpt_fig2.png\" alt=\"\" loading=\"lazy\"><div><h3>[2] Training Language Models to Follow Instructions with Human Feedback</h3><p class=\"reference-meta\">Ouyang et al. · NeurIPS 2022</p><p>The three-step RLHF recipe behind InstructGPT.</p><div class=\"reference-links\"><a href=\"https://arxiv.org/abs/2203.02155\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -697,7 +649,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_instructgpt_fig2.png\"><img src=\"images/w13_instructgpt_fig2.png\" alt=\"The three steps of RLHF.\"><span>Enlarge figure \u2197</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-2\" aria-label=\"Reference 2: Training Language Models to Follow Instructions with Human Feedback\">[2]</a> InstructGPT, Figure 2.</figcaption></figure>",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_instructgpt_fig2.png\"><img src=\"images/w13_instructgpt_fig2.png\" alt=\"The three steps of RLHF.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-2\" aria-label=\"Reference 2: Training Language Models to Follow Instructions with Human Feedback\">[2]</a> InstructGPT, Figure 2.</figcaption></figure>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -734,30 +686,6 @@
       "stack": [
         {
           "path": "lecture_20.py",
-          "line_number": 10,
-          "function_name": "main",
-          "code": "how_models_learn_to_refuse()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
-          "line_number": 11,
-          "function_name": "main",
-          "code": "two_ways_to_fail()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
           "line_number": 11,
           "function_name": "main",
           "code": "two_ways_to_fail()"
@@ -784,14 +712,14 @@
           "path": "lecture_20.py",
           "line_number": 64,
           "function_name": "two_ways_to_fail",
-          "code": "text(\"## 04 \u00b7 Two Ways to Fail\")"
+          "code": "text(\"## 04 · Two Ways to Fail\")"
         }
       ],
       "env": {},
       "renderings": [
         {
           "type": "markdown",
-          "data": "## 04 \u00b7 Two Ways to Fail",
+          "data": "## 04 · Two Ways to Fail",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -895,7 +823,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_trustllm_fig5.png\"><img src=\"images/w13_trustllm_fig5.png\" alt=\"Left, a jailbreak gets a harmful answer. Right, the model refuses to explain how to kill a Windows process.\"><span>Enlarge figure \u2197</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: TrustLLM: Trustworthiness in Large Language Models\">[1]</a> TrustLLM, Figure 5.</figcaption></figure>",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_trustllm_fig5.png\"><img src=\"images/w13_trustllm_fig5.png\" alt=\"Left, a jailbreak gets a harmful answer. Right, the model refuses to explain how to kill a Windows process.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: TrustLLM: Trustworthiness in Large Language Models\">[1]</a> TrustLLM, Figure 5.</figcaption></figure>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -947,7 +875,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<article id=\"ref-3\" class=\"reference-card\"><img src=\"images/w13_xstest_fig1.png\" alt=\"\" loading=\"lazy\"><div><h3>[3] XSTest: A Test Suite for Identifying Exaggerated Safety Behaviours in LLMs</h3><p class=\"reference-meta\">R\u00f6ttger, Kirk, Vidgen, Attanasio, Bianchi, Hovy \u00b7 NAACL 2024</p><p>A test suite for over-refusal, with 200 unsafe prompts as a contrast set.</p><div class=\"reference-links\"><a href=\"https://arxiv.org/abs/2308.01263\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>",
+          "data": "<article id=\"ref-3\" class=\"reference-card\"><img src=\"images/w13_xstest_fig1.png\" alt=\"\" loading=\"lazy\"><div><h3>[3] XSTest: A Test Suite for Identifying Exaggerated Safety Behaviours in LLMs</h3><p class=\"reference-meta\">Röttger, Kirk, Vidgen, Attanasio, Bianchi, Hovy · NAACL 2024</p><p>A test suite for over-refusal, with 200 unsafe prompts as a contrast set.</p><div class=\"reference-links\"><a href=\"https://arxiv.org/abs/2308.01263\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -984,30 +912,6 @@
       "stack": [
         {
           "path": "lecture_20.py",
-          "line_number": 11,
-          "function_name": "main",
-          "code": "two_ways_to_fail()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
-          "line_number": 12,
-          "function_name": "main",
-          "code": "why_safety_training_fails()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
           "line_number": 12,
           "function_name": "main",
           "code": "why_safety_training_fails()"
@@ -1034,14 +938,14 @@
           "path": "lecture_20.py",
           "line_number": 75,
           "function_name": "why_safety_training_fails",
-          "code": "text(\"## 05 \u00b7 Why Safety Training Fails\")"
+          "code": "text(\"## 05 · Why Safety Training Fails\")"
         }
       ],
       "env": {},
       "renderings": [
         {
           "type": "markdown",
-          "data": "## 05 \u00b7 Why Safety Training Fails",
+          "data": "## 05 · Why Safety Training Fails",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -1093,7 +997,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<article id=\"ref-4\" class=\"reference-card\"><img src=\"images/w13_title_jailbroken.png\" alt=\"\" loading=\"lazy\"><div><h3>[4] Jailbroken: How Does LLM Safety Training Fail?</h3><p class=\"reference-meta\">Wei, Haghtalab, Steinhardt \u00b7 NeurIPS 2023</p><p>Competing objectives and mismatched generalization as two causes of jailbreaks.</p><div class=\"reference-links\"><a href=\"https://papers.nips.cc/paper/2023/hash/fd6613131889a4b656206c50a8bd7790-Abstract-Conference.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>",
+          "data": "<article id=\"ref-4\" class=\"reference-card\"><img src=\"images/w13_title_jailbroken.png\" alt=\"\" loading=\"lazy\"><div><h3>[4] Jailbroken: How Does LLM Safety Training Fail?</h3><p class=\"reference-meta\">Wei, Haghtalab, Steinhardt · NeurIPS 2023</p><p>Competing objectives and mismatched generalization as two causes of jailbreaks.</p><div class=\"reference-links\"><a href=\"https://papers.nips.cc/paper/2023/hash/fd6613131889a4b656206c50a8bd7790-Abstract-Conference.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -1171,7 +1075,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_jailbroken_fig1.png\"><img src=\"images/w13_jailbroken_fig1.png\" alt=\"Two jailbreaks of GPT-4, a forced prefix and a Base64 request.\"><span>Enlarge figure \u2197</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-4\" aria-label=\"Reference 4: Jailbroken: How Does LLM Safety Training Fail?\">[4]</a> Jailbroken, Figure 1.</figcaption></figure>",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_jailbroken_fig1.png\"><img src=\"images/w13_jailbroken_fig1.png\" alt=\"Two jailbreaks of GPT-4, a forced prefix and a Base64 request.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-4\" aria-label=\"Reference 4: Jailbroken: How Does LLM Safety Training Fail?\">[4]</a> Jailbroken, Figure 1.</figcaption></figure>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -1258,14 +1162,14 @@
           "path": "lecture_20.py",
           "line_number": 85,
           "function_name": "indirect_prompt_injection",
-          "code": "text(\"## 06 \u00b7 Indirect Prompt Injection\")"
+          "code": "text(\"## 06 · Indirect Prompt Injection\")"
         }
       ],
       "env": {},
       "renderings": [
         {
           "type": "markdown",
-          "data": "## 06 \u00b7 Indirect Prompt Injection",
+          "data": "## 06 · Indirect Prompt Injection",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -1317,7 +1221,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<article id=\"ref-5\" class=\"reference-card\"><img src=\"images/w13_title_greshake.png\" alt=\"\" loading=\"lazy\"><div><h3>[5] Not What You&#x27;ve Signed Up For: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection</h3><p class=\"reference-meta\">Greshake, Abdelnabi, Mishra, Endres, Holz, Fritz \u00b7 AISec 2023</p><p>Introduces indirect prompt injection through retrieved data.</p><div class=\"reference-links\"><a href=\"https://dl.acm.org/doi/10.1145/3605764.3623985\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>",
+          "data": "<article id=\"ref-5\" class=\"reference-card\"><img src=\"images/w13_title_greshake.png\" alt=\"\" loading=\"lazy\"><div><h3>[5] Not What You&#x27;ve Signed Up For: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection</h3><p class=\"reference-meta\">Greshake, Abdelnabi, Mishra, Endres, Holz, Fritz · AISec 2023</p><p>Introduces indirect prompt injection through retrieved data.</p><div class=\"reference-links\"><a href=\"https://dl.acm.org/doi/10.1145/3605764.3623985\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -1421,7 +1325,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_greshake_fig3.png\"><img src=\"images/w13_greshake_fig3.png\" alt=\"Numbered attack path from planted data to a compromised model.\" style=\"max-width:460px\"><span>Enlarge figure \u2197</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-5\" aria-label=\"Reference 5: Not What You&#x27;ve Signed Up For: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection\">[5]</a> Greshake et al., Figure 3. Follow the numbers.</figcaption></figure>",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_greshake_fig3.png\"><img src=\"images/w13_greshake_fig3.png\" alt=\"Numbered attack path from planted data to a compromised model.\" style=\"max-width:460px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-5\" aria-label=\"Reference 5: Not What You&#x27;ve Signed Up For: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection\">[5]</a> Greshake et al., Figure 3. Follow the numbers.</figcaption></figure>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -1458,30 +1362,6 @@
       "stack": [
         {
           "path": "lecture_20.py",
-          "line_number": 15,
-          "function_name": "main",
-          "code": "indirect_prompt_injection()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
-          "line_number": 16,
-          "function_name": "main",
-          "code": "role_confusion()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
           "line_number": 16,
           "function_name": "main",
           "code": "role_confusion()"
@@ -1508,14 +1388,14 @@
           "path": "lecture_20.py",
           "line_number": 96,
           "function_name": "role_confusion",
-          "code": "text(\"## 07 \u00b7 Why the Model Follows: Role Confusion\")"
+          "code": "text(\"## 07 · Why the Model Follows: Role Confusion\")"
         }
       ],
       "env": {},
       "renderings": [
         {
           "type": "markdown",
-          "data": "## 07 \u00b7 Why the Model Follows: Role Confusion",
+          "data": "## 07 · Why the Model Follows: Role Confusion",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -1567,7 +1447,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<article id=\"ref-6\" class=\"reference-card\"><img src=\"images/w13_title_roleconf.png\" alt=\"\" loading=\"lazy\"><div><h3>[6] Prompt Injection as Role Confusion</h3><p class=\"reference-meta\">Ye, Cui, Hadfield-Menell \u00b7 ICML 2026</p><p>Models judge who is speaking from writing style more than from role tags.</p><div class=\"reference-links\"><a href=\"https://proceedings.mlr.press/v306/ye26b.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>",
+          "data": "<article id=\"ref-6\" class=\"reference-card\"><img src=\"images/w13_title_roleconf.png\" alt=\"\" loading=\"lazy\"><div><h3>[6] Prompt Injection as Role Confusion</h3><p class=\"reference-meta\">Ye, Cui, Hadfield-Menell · ICML 2026</p><p>Models judge who is speaking from writing style more than from role tags.</p><div class=\"reference-links\"><a href=\"https://proceedings.mlr.press/v306/ye26b.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -1645,7 +1525,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_roleconf_fig7.png\"><img src=\"images/w13_roleconf_fig7.png\" alt=\"Probe scores under three tag settings; reasoning style text stays high.\"><span>Enlarge figure \u2197</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-6\" aria-label=\"Reference 6: Prompt Injection as Role Confusion\">[6]</a> Role Confusion, Figure 7. Orange marks text that was originally reasoning.</figcaption></figure>",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_roleconf_fig7.png\"><img src=\"images/w13_roleconf_fig7.png\" alt=\"Probe scores under three tag settings; reasoning style text stays high.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-6\" aria-label=\"Reference 6: Prompt Injection as Role Confusion\">[6]</a> Role Confusion, Figure 7. Orange marks text that was originally reasoning.</figcaption></figure>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -1697,7 +1577,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_roleconf_fig3.png\"><img src=\"images/w13_roleconf_fig3.png\" alt=\"Attack success rates of standard and forged reasoning injections.\" style=\"max-width:520px\"><span>Enlarge figure \u2197</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-6\" aria-label=\"Reference 6: Prompt Injection as Role Confusion\">[6]</a> Role Confusion, Figure 3. Gray bars show standard injection, and pink bars show forged reasoning.</figcaption></figure>",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_roleconf_fig3.png\"><img src=\"images/w13_roleconf_fig3.png\" alt=\"Attack success rates of standard and forged reasoning injections.\" style=\"max-width:520px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-6\" aria-label=\"Reference 6: Prompt Injection as Role Confusion\">[6]</a> Role Confusion, Figure 3. Gray bars show standard injection, and pink bars show forged reasoning.</figcaption></figure>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -1784,14 +1664,14 @@
           "path": "lecture_20.py",
           "line_number": 108,
           "function_name": "agentdojo",
-          "code": "text(\"## 08 \u00b7 AgentDojo: Utility and Security\")"
+          "code": "text(\"## 08 · AgentDojo: Utility and Security\")"
         }
       ],
       "env": {},
       "renderings": [
         {
           "type": "markdown",
-          "data": "## 08 \u00b7 AgentDojo: Utility and Security",
+          "data": "## 08 · AgentDojo: Utility and Security",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -1843,7 +1723,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<article id=\"ref-7\" class=\"reference-card\"><img src=\"images/w13_title_agentdojo.png\" alt=\"\" loading=\"lazy\"><div><h3>[7] AgentDojo: A Dynamic Environment to Evaluate Prompt Injection Attacks and Defenses for LLM Agents</h3><p class=\"reference-meta\">Debenedetti et al. \u00b7 NeurIPS 2024 Datasets and Benchmarks</p><p>A benchmark environment for prompt injection against tool-using agents.</p><div class=\"reference-links\"><a href=\"https://proceedings.neurips.cc/paper_files/paper/2024/hash/97091a5177d8dc64b1da8bf3e1f6fb54-Abstract-Datasets_and_Benchmarks_Track.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>",
+          "data": "<article id=\"ref-7\" class=\"reference-card\"><img src=\"images/w13_title_agentdojo.png\" alt=\"\" loading=\"lazy\"><div><h3>[7] AgentDojo: A Dynamic Environment to Evaluate Prompt Injection Attacks and Defenses for LLM Agents</h3><p class=\"reference-meta\">Debenedetti et al. · NeurIPS 2024 Datasets and Benchmarks</p><p>A benchmark environment for prompt injection against tool-using agents.</p><div class=\"reference-links\"><a href=\"https://proceedings.neurips.cc/paper_files/paper/2024/hash/97091a5177d8dc64b1da8bf3e1f6fb54-Abstract-Datasets_and_Benchmarks_Track.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -1947,7 +1827,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_agentdojo_fig1.png\"><img src=\"images/w13_agentdojo_fig1.png\" alt=\"AgentDojo with attacker goal, environment, user task, and the two metrics.\"><span>Enlarge figure \u2197</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-7\" aria-label=\"Reference 7: AgentDojo: A Dynamic Environment to Evaluate Prompt Injection Attacks and Defenses for LLM Agents\">[7]</a> AgentDojo, Figure 1.</figcaption></figure>",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_agentdojo_fig1.png\"><img src=\"images/w13_agentdojo_fig1.png\" alt=\"AgentDojo with attacker goal, environment, user task, and the two metrics.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-7\" aria-label=\"Reference 7: AgentDojo: A Dynamic Environment to Evaluate Prompt Injection Attacks and Defenses for LLM Agents\">[7]</a> AgentDojo, Figure 1.</figcaption></figure>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -1984,30 +1864,6 @@
       "stack": [
         {
           "path": "lecture_20.py",
-          "line_number": 19,
-          "function_name": "main",
-          "code": "agentdojo()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
-          "line_number": 20,
-          "function_name": "main",
-          "code": "agentharm()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
           "line_number": 20,
           "function_name": "main",
           "code": "agentharm()"
@@ -2034,14 +1890,14 @@
           "path": "lecture_20.py",
           "line_number": 119,
           "function_name": "agentharm",
-          "code": "text(\"## 09 \u00b7 AgentHarm: When the User Is the Attacker\")"
+          "code": "text(\"## 09 · AgentHarm: When the User Is the Attacker\")"
         }
       ],
       "env": {},
       "renderings": [
         {
           "type": "markdown",
-          "data": "## 09 \u00b7 AgentHarm: When the User Is the Attacker",
+          "data": "## 09 · AgentHarm: When the User Is the Attacker",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -2093,7 +1949,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<article id=\"ref-8\" class=\"reference-card\"><img src=\"images/w13_title_agentharm.png\" alt=\"\" loading=\"lazy\"><div><h3>[8] AgentHarm: A Benchmark for Measuring Harmfulness of LLM Agents</h3><p class=\"reference-meta\">Andriushchenko et al. \u00b7 ICLR 2025</p><p>A benchmark of harmful requests that need multi-step tool use.</p><div class=\"reference-links\"><a href=\"https://proceedings.iclr.cc/paper_files/paper/2025/hash/c493d23af93118975cdbc32cbe7323f5-Abstract-Conference.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>",
+          "data": "<article id=\"ref-8\" class=\"reference-card\"><img src=\"images/w13_title_agentharm.png\" alt=\"\" loading=\"lazy\"><div><h3>[8] AgentHarm: A Benchmark for Measuring Harmfulness of LLM Agents</h3><p class=\"reference-meta\">Andriushchenko et al. · ICLR 2025</p><p>A benchmark of harmful requests that need multi-step tool use.</p><div class=\"reference-links\"><a href=\"https://proceedings.iclr.cc/paper_files/paper/2025/hash/c493d23af93118975cdbc32cbe7323f5-Abstract-Conference.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -2171,7 +2027,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_agentharm_fig3.png\"><img src=\"images/w13_agentharm_fig3.png\" alt=\"Harmful and benign task scores per model.\"><span>Enlarge figure \u2197</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-8\" aria-label=\"Reference 8: AgentHarm: A Benchmark for Measuring Harmfulness of LLM Agents\">[8]</a> AgentHarm, Figure 3 (top). Red bars show harmful tasks under three settings, and green bars show benign tasks.</figcaption></figure>",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_agentharm_fig3.png\"><img src=\"images/w13_agentharm_fig3.png\" alt=\"Harmful and benign task scores per model.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-8\" aria-label=\"Reference 8: AgentHarm: A Benchmark for Measuring Harmfulness of LLM Agents\">[8]</a> AgentHarm, Figure 3 (top). Red bars show harmful tasks under three settings, and green bars show benign tasks.</figcaption></figure>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -2208,30 +2064,6 @@
       "stack": [
         {
           "path": "lecture_20.py",
-          "line_number": 20,
-          "function_name": "main",
-          "code": "agentharm()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
-          "line_number": 21,
-          "function_name": "main",
-          "code": "wasp()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
           "line_number": 21,
           "function_name": "main",
           "code": "wasp()"
@@ -2258,14 +2090,14 @@
           "path": "lecture_20.py",
           "line_number": 129,
           "function_name": "wasp",
-          "code": "text(\"## 10 \u00b7 WASP: Redirected Is Not Finished\")"
+          "code": "text(\"## 10 · WASP: Redirected Is Not Finished\")"
         }
       ],
       "env": {},
       "renderings": [
         {
           "type": "markdown",
-          "data": "## 10 \u00b7 WASP: Redirected Is Not Finished",
+          "data": "## 10 · WASP: Redirected Is Not Finished",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -2317,7 +2149,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<article id=\"ref-9\" class=\"reference-card\"><img src=\"images/w13_title_wasp.png\" alt=\"\" loading=\"lazy\"><div><h3>[9] WASP: Benchmarking Web Agent Security Against Prompt Injection Attacks</h3><p class=\"reference-meta\">Evtimov et al. \u00b7 NeurIPS 2025 Datasets and Benchmarks</p><p>Follows injected web agents from the first wrong step to the final outcome.</p><div class=\"reference-links\"><a href=\"https://proceedings.neurips.cc/paper_files/paper/2025/hash/1c9818387f5dd0a0bc151214660f059d-Abstract-Datasets_and_Benchmarks_Track.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>",
+          "data": "<article id=\"ref-9\" class=\"reference-card\"><img src=\"images/w13_title_wasp.png\" alt=\"\" loading=\"lazy\"><div><h3>[9] WASP: Benchmarking Web Agent Security Against Prompt Injection Attacks</h3><p class=\"reference-meta\">Evtimov et al. · NeurIPS 2025 Datasets and Benchmarks</p><p>Follows injected web agents from the first wrong step to the final outcome.</p><div class=\"reference-links\"><a href=\"https://proceedings.neurips.cc/paper_files/paper/2025/hash/1c9818387f5dd0a0bc151214660f059d-Abstract-Datasets_and_Benchmarks_Track.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -2395,7 +2227,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_wasp_fig3.png\"><img src=\"images/w13_wasp_fig3.png\" alt=\"Trajectories from the first action after injection to the final state.\"><span>Enlarge figure \u2197</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-9\" aria-label=\"Reference 9: WASP: Benchmarking Web Agent Security Against Prompt Injection Attacks\">[9]</a> WASP, Figure 3. Read left to right.</figcaption></figure>",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_wasp_fig3.png\"><img src=\"images/w13_wasp_fig3.png\" alt=\"Trajectories from the first action after injection to the final state.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-9\" aria-label=\"Reference 9: WASP: Benchmarking Web Agent Security Against Prompt Injection Attacks\">[9]</a> WASP, Figure 3. Read left to right.</figcaption></figure>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -2458,30 +2290,6 @@
       "stack": [
         {
           "path": "lecture_20.py",
-          "line_number": 21,
-          "function_name": "main",
-          "code": "wasp()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
-          "line_number": 22,
-          "function_name": "main",
-          "code": "attempts_and_budget()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
           "line_number": 22,
           "function_name": "main",
           "code": "attempts_and_budget()"
@@ -2508,14 +2316,14 @@
           "path": "lecture_20.py",
           "line_number": 140,
           "function_name": "attempts_and_budget",
-          "code": "text(\"## 11 \u00b7 More Attempts, More Violations\")"
+          "code": "text(\"## 11 · More Attempts, More Violations\")"
         }
       ],
       "env": {},
       "renderings": [
         {
           "type": "markdown",
-          "data": "## 11 \u00b7 More Attempts, More Violations",
+          "data": "## 11 · More Attempts, More Violations",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -2567,7 +2375,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<article id=\"ref-10\" class=\"reference-card\"><img src=\"images/w13_title_competition.png\" alt=\"\" loading=\"lazy\"><div><h3>[10] Security Challenges in AI Agent Deployment: Insights from a Large Scale Public Competition</h3><p class=\"reference-meta\">Zou et al. \u00b7 NeurIPS 2025 Datasets and Benchmarks</p><p>A public red-teaming competition against agents in simulated deployments.</p><div class=\"reference-links\"><a href=\"https://proceedings.neurips.cc/paper_files/paper/2025/hash/73368bc7644c054b5bcc6490a8f2fb1c-Abstract-Datasets_and_Benchmarks_Track.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>",
+          "data": "<article id=\"ref-10\" class=\"reference-card\"><img src=\"images/w13_title_competition.png\" alt=\"\" loading=\"lazy\"><div><h3>[10] Security Challenges in AI Agent Deployment: Insights from a Large Scale Public Competition</h3><p class=\"reference-meta\">Zou et al. · NeurIPS 2025 Datasets and Benchmarks</p><p>A public red-teaming competition against agents in simulated deployments.</p><div class=\"reference-links\"><a href=\"https://proceedings.neurips.cc/paper_files/paper/2025/hash/73368bc7644c054b5bcc6490a8f2fb1c-Abstract-Datasets_and_Benchmarks_Track.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -2619,7 +2427,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_competition_fig4.png\"><img src=\"images/w13_competition_fig4.png\" alt=\"Attack success rate per model with 1, 10, and 100 attempts.\"><span>Enlarge figure \u2197</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-10\" aria-label=\"Reference 10: Security Challenges in AI Agent Deployment: Insights from a Large Scale Public Competition\">[10]</a> Zou et al., Figure 4. The three shades show 1, 10, and 100 attempts.</figcaption></figure>",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_competition_fig4.png\"><img src=\"images/w13_competition_fig4.png\" alt=\"Attack success rate per model with 1, 10, and 100 attempts.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-10\" aria-label=\"Reference 10: Security Challenges in AI Agent Deployment: Insights from a Large Scale Public Competition\">[10]</a> Zou et al., Figure 4. The three shades show 1, 10, and 100 attempts.</figcaption></figure>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -2855,14 +2663,14 @@
           "path": "lecture_20.py",
           "line_number": 155,
           "function_name": "camel_design",
-          "code": "text(\"## 12 \u00b7 CaMeL: Separate Planning from Reading\")"
+          "code": "text(\"## 12 · CaMeL: Separate Planning from Reading\")"
         }
       ],
       "env": {},
       "renderings": [
         {
           "type": "markdown",
-          "data": "## 12 \u00b7 CaMeL: Separate Planning from Reading",
+          "data": "## 12 · CaMeL: Separate Planning from Reading",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -2914,7 +2722,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<article id=\"ref-11\" class=\"reference-card\"><img src=\"images/w13_title_camel.png\" alt=\"\" loading=\"lazy\"><div><h3>[11] Defeating Prompt Injections by Design (CaMeL)</h3><p class=\"reference-meta\">Debenedetti et al. \u00b7 SaTML 2026</p><p>A system-level defense that tracks where data comes from.</p><div class=\"reference-links\"><a href=\"https://ieeexplore.ieee.org/abstract/document/11691650/authors\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>",
+          "data": "<article id=\"ref-11\" class=\"reference-card\"><img src=\"images/w13_title_camel.png\" alt=\"\" loading=\"lazy\"><div><h3>[11] Defeating Prompt Injections by Design (CaMeL)</h3><p class=\"reference-meta\">Debenedetti et al. · SaTML 2026</p><p>A system-level defense that tracks where data comes from.</p><div class=\"reference-links\"><a href=\"https://ieeexplore.ieee.org/abstract/document/11691650/authors\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -3018,7 +2826,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_camel_fig5.png\"><img src=\"images/w13_camel_fig5.png\" alt=\"CaMeL with privileged LLM, quarantined LLM, and interpreter.\"><span>Enlarge figure \u2197</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-11\" aria-label=\"Reference 11: Defeating Prompt Injections by Design (CaMeL)\">[11]</a> CaMeL, Figure 5.</figcaption></figure>",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_camel_fig5.png\"><img src=\"images/w13_camel_fig5.png\" alt=\"CaMeL with privileged LLM, quarantined LLM, and interpreter.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-11\" aria-label=\"Reference 11: Defeating Prompt Injections by Design (CaMeL)\">[11]</a> CaMeL, Figure 5.</figcaption></figure>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -3169,30 +2977,6 @@
       "stack": [
         {
           "path": "lecture_20.py",
-          "line_number": 25,
-          "function_name": "main",
-          "code": "camel_design()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
-          "line_number": 26,
-          "function_name": "main",
-          "code": "camel_results()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
           "line_number": 26,
           "function_name": "main",
           "code": "camel_results()"
@@ -3219,14 +3003,14 @@
           "path": "lecture_20.py",
           "line_number": 171,
           "function_name": "camel_results",
-          "code": "text(\"## 13 \u00b7 CaMeL: Results on AgentDojo\")"
+          "code": "text(\"## 13 · CaMeL: Results on AgentDojo\")"
         }
       ],
       "env": {},
       "renderings": [
         {
           "type": "markdown",
-          "data": "## 13 \u00b7 CaMeL: Results on AgentDojo",
+          "data": "## 13 · CaMeL: Results on AgentDojo",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -3278,7 +3062,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_camel_fig9.png\"><img src=\"images/w13_camel_fig9.png\" alt=\"Utility under attack and number of successful attacks.\"><span>Enlarge figure \u2197</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-11\" aria-label=\"Reference 11: Defeating Prompt Injections by Design (CaMeL)\">[11]</a> CaMeL, Figure 9.</figcaption></figure>",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_camel_fig9.png\"><img src=\"images/w13_camel_fig9.png\" alt=\"Utility under attack and number of successful attacks.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-11\" aria-label=\"Reference 11: Defeating Prompt Injections by Design (CaMeL)\">[11]</a> CaMeL, Figure 9.</figcaption></figure>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -3367,30 +3151,6 @@
       "stack": [
         {
           "path": "lecture_20.py",
-          "line_number": 26,
-          "function_name": "main",
-          "code": "camel_results()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
-          "line_number": 27,
-          "function_name": "main",
-          "code": "adaptive_attacks()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
           "line_number": 27,
           "function_name": "main",
           "code": "adaptive_attacks()"
@@ -3417,14 +3177,14 @@
           "path": "lecture_20.py",
           "line_number": 180,
           "function_name": "adaptive_attacks",
-          "code": "text(\"## 14 \u00b7 The Attacker Moves Second\")"
+          "code": "text(\"## 14 · The Attacker Moves Second\")"
         }
       ],
       "env": {},
       "renderings": [
         {
           "type": "markdown",
-          "data": "## 14 \u00b7 The Attacker Moves Second",
+          "data": "## 14 · The Attacker Moves Second",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -3476,7 +3236,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<article id=\"ref-12\" class=\"reference-card\"><img src=\"images/w13_title_ams.png\" alt=\"\" loading=\"lazy\"><div><h3>[12] The Attacker Moves Second: Stronger Adaptive Attacks Bypass Defenses Against LLM Jailbreaks and Prompt Injections</h3><p class=\"reference-meta\">Nasr et al. \u00b7 USENIX Security 2026</p><p>Re-tests published defenses with attacks that adapt to each one.</p><div class=\"reference-links\"><a href=\"https://www.usenix.org/conference/usenixsecurity26/presentation/nasr\" target=\"_blank\" rel=\"noopener noreferrer\">Open source \u2197</a></div></div></article>",
+          "data": "<article id=\"ref-12\" class=\"reference-card\"><img src=\"images/w13_title_ams.png\" alt=\"\" loading=\"lazy\"><div><h3>[12] The Attacker Moves Second: Stronger Adaptive Attacks Bypass Defenses Against LLM Jailbreaks and Prompt Injections</h3><p class=\"reference-meta\">Nasr et al. · USENIX Security 2026</p><p>Re-tests published defenses with attacks that adapt to each one.</p><div class=\"reference-links\"><a href=\"https://www.usenix.org/conference/usenixsecurity26/presentation/nasr\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -3528,7 +3288,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_ams_fig2.png\"><img src=\"images/w13_ams_fig2.png\" alt=\"Adaptive attack loop.\"><span>Enlarge figure \u2197</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-12\" aria-label=\"Reference 12: The Attacker Moves Second: Stronger Adaptive Attacks Bypass Defenses Against LLM Jailbreaks and Prompt Injections\">[12]</a> The Attacker Moves Second, Figure 2.</figcaption></figure>",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_ams_fig2.png\"><img src=\"images/w13_ams_fig2.png\" alt=\"Adaptive attack loop.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-12\" aria-label=\"Reference 12: The Attacker Moves Second: Stronger Adaptive Attacks Bypass Defenses Against LLM Jailbreaks and Prompt Injections\">[12]</a> The Attacker Moves Second, Figure 2.</figcaption></figure>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -3554,7 +3314,7 @@
       "renderings": [
         {
           "type": "markdown",
-          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_ams_fig1.png\"><img src=\"images/w13_ams_fig1.png\" alt=\"Attack success rates on 12 defenses under original and adaptive attacks.\"><span>Enlarge figure \u2197</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-12\" aria-label=\"Reference 12: The Attacker Moves Second: Stronger Adaptive Attacks Bypass Defenses Against LLM Jailbreaks and Prompt Injections\">[12]</a> The Attacker Moves Second, Figure 1. Hatched bars show the original evaluation, and orange bars show the adaptive attack.</figcaption></figure>",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/w13_ams_fig1.png\"><img src=\"images/w13_ams_fig1.png\" alt=\"Attack success rates on 12 defenses under original and adaptive attacks.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-12\" aria-label=\"Reference 12: The Attacker Moves Second: Stronger Adaptive Attacks Bypass Defenses Against LLM Jailbreaks and Prompt Injections\">[12]</a> The Attacker Moves Second, Figure 1. Hatched bars show the original evaluation, and orange bars show the adaptive attack.</figcaption></figure>",
           "style": {},
           "external_link": null,
           "internal_link": null
@@ -3591,30 +3351,6 @@
       "stack": [
         {
           "path": "lecture_20.py",
-          "line_number": 27,
-          "function_name": "main",
-          "code": "adaptive_attacks()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
-          "line_number": 28,
-          "function_name": "main",
-          "code": "summary()"
-        }
-      ],
-      "env": {},
-      "renderings": []
-    },
-    {
-      "stack": [
-        {
-          "path": "lecture_20.py",
           "line_number": 28,
           "function_name": "main",
           "code": "summary()"
@@ -3641,14 +3377,14 @@
           "path": "lecture_20.py",
           "line_number": 190,
           "function_name": "summary",
-          "code": "text(\"## 15 \u00b7 Summary\")"
+          "code": "text(\"## 15 · Summary\")"
         }
       ],
       "env": {},
       "renderings": [
         {
           "type": "markdown",
-          "data": "## 15 \u00b7 Summary",
+          "data": "## 15 · Summary",
           "style": {},
           "external_link": null,
           "internal_link": null
