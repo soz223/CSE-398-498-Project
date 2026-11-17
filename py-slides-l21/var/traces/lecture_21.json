@@ -1,0 +1,3813 @@
+{
+  "files": {
+    "lecture_21.py": "from dataclasses import dataclass\nfrom edtrace import text\nfrom lecture_support import card, figure\n\n\ndef main():\n    # Part 1. Where attacks enter the tool layer\n    introduction()\n    how_agents_reach_tools()\n    tool_poisoning()\n    rug_pulls_and_shadowing()\n    real_clients()\n\n    # Part 2. Measuring tool poisoning\n    mcptox()\n    which_attacks_work()\n    agentvigil()\n\n    # Part 3. Controls around the model\n    protocol_rules()\n    confused_deputy()\n    urls_and_local_servers()\n    codex_controls()\n\n    # Part 4. Agents in your own research\n    where_data_goes()\n    disclosing_agent_use()\n    summary()\n\n\ndef introduction():\n    text(\"## 01 · The Agent Attack Surface\")\n    text(\"CSE 398/498 · Vibe Research for Scientific Discovery · Lichao Sun · Lehigh University\")\n    text(\"Last time we studied attacks on the model itself. Today we follow information through **the software around the model**.\")\n    text(\"- We start with **MCP**, the protocol that connects agents to tools, and see where attacks enter.\")\n    text(\"- Then we look at how researchers **measure tool poisoning**.\")\n    text(\"- Next we study **controls** that check an action before it runs.\")\n    text(\"- Finally we apply these ideas to **your own research project**.\")\n    text(\"Today we are going to study two questions. **Where does untrusted text enter, and where can software stop a bad action?**\")\n\n\ndef how_agents_reach_tools():\n    text(\"## 02 · How an Agent Reaches Its Tools\")\n    text(\"Let's first see how an agent connects to its tools. Most agents today use **MCP**, the Model Context Protocol. This work by *Huang et al.* builds a threat model for it.\")\n    text(card(\"mcpthreat\"))\n    text(\"- The **host** runs the application, and its **client** talks to one or more **servers**.\")\n    text(\"- Each server offers tools. Each tool comes with a name and a description.\")\n    text(figure(\"images/l21_mcpthreat_fig1a.png\", \"MCP components with numbered steps between user, host, client, and server.\", \"mcpthreat\", \"MCP Threat Modeling, Figure 1, upper part. Follow the numbered steps.\"))\n    text(\"- In step 3, the model reads the server's tool list. In step 4, it picks a tool.\")\n    text(figure(\"images/l21_mcpthreat_fig1b.png\", \"The model, the authorization server, and external data stores.\", \"mcpthreat\", \"MCP Threat Modeling, Figure 1, lower part.\"))\n    text(\"The authors find **57 threats** across five components. Each arrow crosses a boundary where one part trusts another. Next we look at the most common threat.\")\n\n\ndef tool_poisoning():\n    text(\"## 03 · Tool Poisoning\")\n    text(\"The model reads every tool description before it picks a tool. So the description itself is a way in. We call this **tool poisoning**.\")\n    text(\"- Here the tool only adds two numbers. Its description hides an **IMPORTANT** block.\")\n    text(\"- The block asks the model to read a private file, pass it along as an argument, and keep quiet about it.\")\n    text(figure(\"images/l21_mcpthreat_add.png\", \"Python code of an add tool whose docstring asks the model to read secret files.\", \"mcpthreat\", \"MCP Threat Modeling, Section 5.1.1. A poisoned addition tool.\", width=430))\n    text(\"- The user only asks to add 12 and 12. The user never sees the description, and the model always does.\")\n    text(\"*Invariant Labs* first reported this attack in April 2025.\")\n    text(card(\"invariant\"))\n    text(\"So we treat a tool description as **untrusted input**, just like a web page. Next we see how the attack can change over time.\")\n\n\ndef rug_pulls_and_shadowing():\n    text(\"## 04 · Rug Pulls and Shadowing\")\n    text(\"Tool poisoning also comes in quieter forms. *Invariant Labs* describes two of them.\")\n    text(\"- In a **rug pull**, the user approves a harmless server. Later, the server changes its tool description.\")\n    text(figure(\"images/l21_invariant_rugpull.png\", \"The user installs a benign service, and at use time it is swapped for an injected one.\", \"invariant\", \"Invariant Labs, rug pull. Installation time is on the left, and use time is on the right.\", width=430))\n    text(\"- So an old approval may not cover the description the model reads today.\")\n    text(\"- In **shadowing**, one server's description changes how the agent uses another server's tool.\")\n    text(figure(\"images/l21_invariant_shadow.png\", \"An injected service changes how the agent uses a trusted send_email tool.\", \"invariant\", \"Invariant Labs, shadowing. The user asks for an email to alice@mail.com.\", width=560))\n    text(\"- In this example, a poisoned tool tells the agent to send every email to the attacker. The trusted email tool then does the sending.\")\n    text(\"So we need to know **where each rule came from**. Next we ask how real clients handle these attacks.\")\n\n\ndef real_clients():\n    text(\"## 05 · How Real Clients Respond\")\n    text(\"The same threat modeling work tests these attacks on seven real MCP clients.\")\n    text(figure(\"images/l21_mcpthreat_tab19.png\", \"Table of four attacks against seven MCP clients, colored safe, partial, or unsafe.\", \"mcpthreat\", \"MCP Threat Modeling, Table 19. Green is safe, yellow is partial, and red is unsafe.\"))\n    text(\"- Each row is an attack, such as reading files or remote code execution. Each column is a client.\")\n    text(\"- Results vary a lot from client to client. Five of the seven clients do not **validate tool descriptions** before use.\")\n    text(\"- These clients were tested in November 2025, and newer versions may behave differently.\")\n    text(\"So when your client, model, or settings change, you rerun the tests. Next we move from case studies to a benchmark.\")\n\n\ndef mcptox():\n    text(\"## 06 · MCPTox: A Benchmark for Tool Poisoning\")\n    text(\"Case studies show that an attack is possible. To see how often it works, we need a benchmark. This work, *MCPTox*, builds one from real MCP servers.\")\n    text(card(\"mcptox\"))\n    text(\"- It uses **45 real servers**, **353 tools**, and **1,348 test cases**.\")\n    text(\"- The agent carries out a normal task. The attacker only changes the metadata of one tool.\")\n    text(\"- The test checks whether the agent ends up following the attacker's goal.\")\n    text(figure(\"images/l21_mcptox_fig2.png\", \"MCPTox pipeline with a poisoned security_check tool and three evaluation outcomes.\", \"mcptox\", \"MCPTox, Figure 2.\"))\n    text(\"The poisoned tool never needs to be called. The model reads its description while it picks other tools. Next we look at the results.\")\n\n\ndef which_attacks_work():\n    text(\"## 07 · Which Attacks Work Best\")\n    text(\"Now we look at how often these attacks succeed. ASR means attack success rate, so a higher bar is worse.\")\n    text(figure(\"images/l21_mcptox_fig1b.png\", \"Attack success rate for about twenty models.\", \"mcptox\", \"MCPTox, Figure 1b. Each bar is one model.\", width=620))\n    text(\"- Several models are fooled more than 60% of the time. A strong general model is not automatically a safe one.\")\n    text(\"- The authors compare three kinds of attack. In **P3**, the agent calls the right tool with **the wrong arguments**.\")\n    text(figure(\"images/l21_mcptox_fig5.png\", \"Average ASR for attack paradigms P1, P2, P3, and for stronger prompt wording.\", \"mcptox\", \"MCPTox, Figure 5. Left, three attack paradigms. Right, stronger wording of the attack.\", width=560))\n    text(\"- P3 succeeds most often, almost half the time on average.\")\n    text(\"This means a check on the tool name alone can miss the attack. Here is a small sketch in Python, as **our own example**.\")\n    call = ToolCall(tool=\"send_email\", to=\"attkr@pwnd.com\")\n    name_ok = call.tool in APPROVED_TOOLS  # @inspect name_ok\n    args_ok = recipient_is_known(call)  # @stepover @clear name_ok @inspect args_ok\n    text(\"The tool name passes the check, and the recipient fails it. So we check **the complete arguments** before a tool runs. Next we ask how attackers find such inputs.\")  # @clear args_ok\n\n\ndef agentvigil():\n    text(\"## 08 · AgentVigil: Attacks That Learn from Feedback\")\n    text(\"So far the attacks were written by hand. This work, *AgentVigil*, generates them automatically and learns from each attempt.\")\n    text(card(\"agentvigil\"))\n    text(\"- It starts from seed attacks and changes them with a mutator.\")\n    text(\"- It sends each attack to the agent through external data, and a scorer checks the result.\")\n    text(\"- A tree search picks which seeds to explore next.\")\n    text(figure(\"images/l21_agentvigil_fig2.png\", \"The agent system on the left and the seed, mutator, scorer loop on the right.\", \"agentvigil\", \"AgentVigil, Figure 2. The agent is on the left, and the test loop is on the right.\"))\n    text(\"- Removing the good starting seeds, or the seed selection, lowers coverage.\")\n    text(figure(\"images/l21_agentvigil_fig3.png\", \"Coverage over ten steps for the full method and two ablations.\", \"agentvigil\", \"AgentVigil, Figure 3. Higher coverage means attacks succeed on more tasks.\", width=460))\n    text(\"Recall the attack budget from last lecture. An attacker that learns needs fewer tries, so we compare methods **at the same budget**. Next we turn from attacks to controls.\")\n\n\ndef protocol_rules():\n    text(\"## 09 · What the Protocol Requires\")\n    text(\"We have seen how attacks reach the model. Now we follow the model's output outward. Before a tool call runs, other software still has a chance to stop it. Let's first look at what the MCP specification asks for.\")\n    text(card(\"mcpspec\"))\n    text(\"- Servers **must** validate inputs, control access, and sanitize outputs.\")\n    text(\"- Clients **should** ask the user before sensitive operations, and let the user deny a tool call.\")\n    text(figure(\"images/l21_mcpspec_tools.png\", \"Lists of what MCP servers must do and what clients should do.\", \"mcpspec\", \"MCP specification, Tools, Security Considerations.\", width=430))\n    text(\"- Tool annotations, such as a hint that a tool only reads, are claims made by the server. The specification says to treat them as untrusted unless the server is trusted.\")\n    text(\"A rule on paper does not prove that a client follows it. Recall that five of seven clients skipped validation. So we check **what the implementation enforces**. Next we look at failures that happen even without a model.\")\n\n\ndef confused_deputy():\n    text(\"## 10 · The Confused Deputy\")\n    text(\"Some attacks around agents do not involve the model at all. The MCP security guide describes a **confused deputy**.\")\n    text(\"- A proxy server holds permissions that the attacker lacks.\")\n    text(\"- The attacker tricks the proxy into using those permissions on the attacker's behalf.\")\n    text(figure(\"images/l21_deputy_setup.png\", \"Sequence diagram where a consent cookie lets the request skip consent.\", \"mcpspec\", \"MCP Security Best Practices, confused deputy. A stored consent cookie lets the request skip the consent screen.\"))\n    text(\"- By the end, the attacker reaches a third party API **as the user**.\")\n    text(figure(\"images/l21_deputy_attack.png\", \"Sequence diagram ending with the attacker impersonating the user.\", \"mcpspec\", \"MCP Security Best Practices, confused deputy, the rest of the attack.\"))\n    text(\"A better prompt cannot fix this. We fix it in the authorization code, for example by setting the consent cookie only after the user approves. Next we look at two more risks of this kind.\")\n\n\ndef urls_and_local_servers():\n    text(\"## 11 · Fetching URLs and Running Local Servers\")\n    text(\"Two more risks come from ordinary software. Let's first look at **server side request forgery**, or SSRF.\")\n    text(\"- A malicious server gives the client a URL, and the client fetches it without checking.\")\n    text(\"- The URL points to an internal address, such as a cloud metadata service, and secrets leak back.\")\n    text(figure(\"images/l21_ssrf.png\", \"The client follows a URL to an internal metadata service.\", \"mcpspec\", \"MCP Security Best Practices, SSRF.\"))\n    text(\"- So the guide says clients should block private and reserved IP ranges.\")\n    text(\"- The second risk is a **local server**. It is a program that runs on your machine with your permissions.\")\n    text(figure(\"images/l21_local_server.png\", \"Three attacks on local MCP servers and two example startup commands.\", \"mcpspec\", \"MCP Security Best Practices, local server compromise.\", width=560))\n    text(\"Before you install one, you check where it came from and what it can access. Next we see how a coding agent limits this access.\")\n\n\ndef codex_controls():\n    text(\"## 12 · Sandbox, Approval, and Rules in Codex\")\n    text(\"Now let's connect these ideas to a tool you can use. *Codex*, OpenAI's coding agent, separates two settings.\")\n    text(card(\"codex\"))\n    text(\"- The **sandbox** limits what a command can read, write, or reach on the network.\")\n    text(\"- The **approval policy** decides when Codex must ask you first.\")\n    text(figure(\"images/l21_codex_sandbox.png\", \"Codex documentation describing sandbox mode and approval policy.\", \"codex\", \"Codex documentation, Agent approvals and security.\", width=560))\n    text(\"- **Rules** add finer control. Each rule matches the start of a command and decides to allow, prompt, or forbid it.\")\n    text(figure(\"images/l21_codex_rules.png\", \"A prefix_rule with pattern gh pr view and decision prompt.\", \"codex\", \"Codex documentation, Rules. This rule asks before running gh pr view.\", width=520))\n    text(\"Here is how such rules work, in a short Python sketch of **our own**.\")\n    decision = decide([\"gh\", \"pr\", \"view\", \"42\"])  # @stepover @inspect decision\n    decision = decide([\"rm\", \"-rf\", \"data\"])  # @stepover @inspect decision\n    text(\"The first command needs your approval, and the second is forbidden. So we keep the workspace small and review actions that leave it. Next we bring these ideas into your own project.\")  # @clear decision\n\n\ndef where_data_goes():\n    text(\"## 13 · Where Your Data Goes\")\n    text(\"The same questions apply when you use agents for research. Let's first ask **where project material goes**.\")\n    text(card(\"aris\"))\n    text(\"- This work, *ARIS*, runs research with one model that writes code and a model from another provider that reviews it.\")\n    text(\"- Its authors warn that a repository review may send source code to **external LLM APIs**.\")\n    text(\"- They advise against it for code with secrets, until a local review path exists.\")\n    text(\"- Code, logs, data samples, and drafts can each have **different sharing rules**.\")\n    text(\"So before you hand work to an agent, you list which service receives which material. Next we look at how to report agent use in a paper.\")\n\n\ndef disclosing_agent_use():\n    text(\"## 14 · Disclosing Agent Use\")\n    text(\"Readers of your paper need to know what the agent did. Here is a short checklist, based on our syllabus and the ACL policy on publication ethics.\")\n    text(\"- You name the agent, the model, their versions, and any skills you used.\")\n    text(\"- You say which sections and code the agent produced, and who checked them.\")\n    text(\"- You record the data and code behind each figure, and say whether any images were generated.\")\n    text(\"- You record who checked the references and which ones were removed.\")\n    text(\"- You keep the session log with your code.\")\n    text(\"These records let a reader follow what happened. **The authors remain responsible for everything they submit.** Now let's put the lecture together.\")\n\n\ndef summary():\n    text(\"## 15 · Summary\")\n    text(\"Let's put the pieces together.\")\n    text(\"- Tool descriptions and tool results are **untrusted input**, just like web pages.\")\n    text(\"- An attack can pick the right tool with **the wrong arguments**, so we check the complete call.\")\n    text(\"- Validation, authorization code, sandboxes, and approvals limit what an action can reach.\")\n    text(\"- Logs and disclosure let others **check what happened**.\")\n    text(\"Now we can answer our two questions. **Where does untrusted text enter, and where can software stop a bad action?**\")\n\n\n# Teaching sketches for Sections 07 and 12 (our own examples)\n\n@dataclass\nclass ToolCall:\n    tool: str\n    to: str\n\n\nAPPROVED_TOOLS = {\"add\", \"send_email\"}\nKNOWN_CONTACTS = {\"alice@mail.com\"}  # recipients named in the user's request\n\n\ndef recipient_is_known(call: ToolCall) -> bool:\n    return call.to in KNOWN_CONTACTS\n\n\nRULES = [\n    ((\"gh\", \"pr\", \"view\"), \"prompt\"),\n    ((\"rm\", \"-rf\"), \"forbid\"),\n]\n\n\ndef decide(command: list[str]) -> str:\n    # Return the decision of the first rule whose prefix matches the command.\n    for prefix, decision in RULES:\n        if tuple(command[:len(prefix)]) == prefix:\n            return decision\n    return \"use sandbox and approval policy\"\n"
+  },
+  "hidden_line_numbers": {
+    "lecture_21.py": []
+  },
+  "steps": [
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 6,
+          "function_name": "main",
+          "code": "def main():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "introduction()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "introduction()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 31,
+          "function_name": "introduction",
+          "code": "def introduction():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "introduction()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 32,
+          "function_name": "introduction",
+          "code": "text(\"## 01 · The Agent Attack Surface\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 01 · The Agent Attack Surface",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "introduction()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 33,
+          "function_name": "introduction",
+          "code": "text(\"CSE 398/498 · Vibe Research for Scientific Discovery · Lichao Sun · Lehigh University\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "CSE 398/498 · Vibe Research for Scientific Discovery · Lichao Sun · Lehigh University",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "introduction()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 34,
+          "function_name": "introduction",
+          "code": "text(\"Last time we studied attacks on the model itself. Today we follow information through **the software around the model**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Last time we studied attacks on the model itself. Today we follow information through **the software around the model**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "introduction()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 35,
+          "function_name": "introduction",
+          "code": "text(\"- We start with **MCP**, the protocol that connects agents to tools, and see where attacks enter.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- We start with **MCP**, the protocol that connects agents to tools, and see where attacks enter.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "introduction()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 36,
+          "function_name": "introduction",
+          "code": "text(\"- Then we look at how researchers **measure tool poisoning**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Then we look at how researchers **measure tool poisoning**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "introduction()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 37,
+          "function_name": "introduction",
+          "code": "text(\"- Next we study **controls** that check an action before it runs.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Next we study **controls** that check an action before it runs.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "introduction()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 38,
+          "function_name": "introduction",
+          "code": "text(\"- Finally we apply these ideas to **your own research project**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Finally we apply these ideas to **your own research project**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "introduction()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 39,
+          "function_name": "introduction",
+          "code": "text(\"Today we are going to study two questions. **Where does untrusted text enter, and where can software stop a bad action?**\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Today we are going to study two questions. **Where does untrusted text enter, and where can software stop a bad action?**",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 9,
+          "function_name": "main",
+          "code": "how_agents_reach_tools()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 42,
+          "function_name": "how_agents_reach_tools",
+          "code": "def how_agents_reach_tools():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 9,
+          "function_name": "main",
+          "code": "how_agents_reach_tools()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 43,
+          "function_name": "how_agents_reach_tools",
+          "code": "text(\"## 02 · How an Agent Reaches Its Tools\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 02 · How an Agent Reaches Its Tools",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 9,
+          "function_name": "main",
+          "code": "how_agents_reach_tools()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 44,
+          "function_name": "how_agents_reach_tools",
+          "code": "text(\"Let's first see how an agent connects to its tools. Most agents today use **MCP**, the Model Context Protocol. This work by *Huang et al.* builds a threat model for it.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Let's first see how an agent connects to its tools. Most agents today use **MCP**, the Model Context Protocol. This work by *Huang et al.* builds a threat model for it.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 9,
+          "function_name": "main",
+          "code": "how_agents_reach_tools()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 45,
+          "function_name": "how_agents_reach_tools",
+          "code": "text(card(\"mcpthreat\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<article id=\"ref-1\" class=\"reference-card\"><img src=\"images/l21_title_mcpthreat.png\" alt=\"\" loading=\"lazy\"><div><h3>[1] Model Context Protocol Threat Modeling and Analyzing Vulnerabilities to Prompt Injection with Tool Poisoning</h3><p class=\"reference-meta\">Huang, Huang, Tran, Milani Fard · arXiv 2603.22489, 2026</p><p>A threat model of MCP with 57 threats, and tool poisoning tests on seven clients.</p><div class=\"reference-links\"><a href=\"https://arxiv.org/abs/2603.22489\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 9,
+          "function_name": "main",
+          "code": "how_agents_reach_tools()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 46,
+          "function_name": "how_agents_reach_tools",
+          "code": "text(\"- The **host** runs the application, and its **client** talks to one or more **servers**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The **host** runs the application, and its **client** talks to one or more **servers**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 9,
+          "function_name": "main",
+          "code": "how_agents_reach_tools()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 47,
+          "function_name": "how_agents_reach_tools",
+          "code": "text(\"- Each server offers tools. Each tool comes with a name and a description.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Each server offers tools. Each tool comes with a name and a description.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 9,
+          "function_name": "main",
+          "code": "how_agents_reach_tools()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 48,
+          "function_name": "how_agents_reach_tools",
+          "code": "text(figure(\"images/l21_mcpthreat_fig1a.png\", \"MCP components with numbered steps between user, host, client, and server.\", \"mcpthreat\", \"MCP Threat Modeling, Figure 1, upper part. Follow the numbered steps.\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l21_mcpthreat_fig1a.png\"><img src=\"images/l21_mcpthreat_fig1a.png\" alt=\"MCP components with numbered steps between user, host, client, and server.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: Model Context Protocol Threat Modeling and Analyzing Vulnerabilities to Prompt Injection with Tool Poisoning\">[1]</a> MCP Threat Modeling, Figure 1, upper part. Follow the numbered steps.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 9,
+          "function_name": "main",
+          "code": "how_agents_reach_tools()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 49,
+          "function_name": "how_agents_reach_tools",
+          "code": "text(\"- In step 3, the model reads the server's tool list. In step 4, it picks a tool.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- In step 3, the model reads the server's tool list. In step 4, it picks a tool.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 9,
+          "function_name": "main",
+          "code": "how_agents_reach_tools()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 50,
+          "function_name": "how_agents_reach_tools",
+          "code": "text(figure(\"images/l21_mcpthreat_fig1b.png\", \"The model, the authorization server, and external data stores.\", \"mcpthreat\", \"MCP Threat Modeling, Figure 1, lower part.\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l21_mcpthreat_fig1b.png\"><img src=\"images/l21_mcpthreat_fig1b.png\" alt=\"The model, the authorization server, and external data stores.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: Model Context Protocol Threat Modeling and Analyzing Vulnerabilities to Prompt Injection with Tool Poisoning\">[1]</a> MCP Threat Modeling, Figure 1, lower part.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 9,
+          "function_name": "main",
+          "code": "how_agents_reach_tools()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 51,
+          "function_name": "how_agents_reach_tools",
+          "code": "text(\"The authors find **57 threats** across five components. Each arrow crosses a boundary where one part trusts another. Next we look at the most common threat.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "The authors find **57 threats** across five components. Each arrow crosses a boundary where one part trusts another. Next we look at the most common threat.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "tool_poisoning()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 54,
+          "function_name": "tool_poisoning",
+          "code": "def tool_poisoning():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "tool_poisoning()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 55,
+          "function_name": "tool_poisoning",
+          "code": "text(\"## 03 · Tool Poisoning\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 03 · Tool Poisoning",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "tool_poisoning()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 56,
+          "function_name": "tool_poisoning",
+          "code": "text(\"The model reads every tool description before it picks a tool. So the description itself is a way in. We call this **tool poisoning**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "The model reads every tool description before it picks a tool. So the description itself is a way in. We call this **tool poisoning**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "tool_poisoning()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 57,
+          "function_name": "tool_poisoning",
+          "code": "text(\"- Here the tool only adds two numbers. Its description hides an **IMPORTANT** block.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Here the tool only adds two numbers. Its description hides an **IMPORTANT** block.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "tool_poisoning()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 58,
+          "function_name": "tool_poisoning",
+          "code": "text(\"- The block asks the model to read a private file, pass it along as an argument, and keep quiet about it.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The block asks the model to read a private file, pass it along as an argument, and keep quiet about it.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "tool_poisoning()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 59,
+          "function_name": "tool_poisoning",
+          "code": "text(figure(\"images/l21_mcpthreat_add.png\", \"Python code of an add tool whose docstring asks the model to read secret files.\", \"mcpthreat\", \"MCP Threat Modeling, Section 5.1.1. A poisoned addition tool.\", width=430))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l21_mcpthreat_add.png\"><img src=\"images/l21_mcpthreat_add.png\" alt=\"Python code of an add tool whose docstring asks the model to read secret files.\" style=\"max-width:430px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: Model Context Protocol Threat Modeling and Analyzing Vulnerabilities to Prompt Injection with Tool Poisoning\">[1]</a> MCP Threat Modeling, Section 5.1.1. A poisoned addition tool.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "tool_poisoning()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 60,
+          "function_name": "tool_poisoning",
+          "code": "text(\"- The user only asks to add 12 and 12. The user never sees the description, and the model always does.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The user only asks to add 12 and 12. The user never sees the description, and the model always does.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "tool_poisoning()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 61,
+          "function_name": "tool_poisoning",
+          "code": "text(\"*Invariant Labs* first reported this attack in April 2025.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "*Invariant Labs* first reported this attack in April 2025.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "tool_poisoning()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 62,
+          "function_name": "tool_poisoning",
+          "code": "text(card(\"invariant\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<article id=\"ref-2\" class=\"reference-card\"><img src=\"images/l21_invariant_poison.png\" alt=\"\" loading=\"lazy\"><div><h3>[2] MCP Security Notification: Tool Poisoning Attacks</h3><p class=\"reference-meta\">Invariant Labs · April 2025</p><p>The first public report of tool poisoning, rug pulls, and shadowing in MCP.</p><div class=\"reference-links\"><a href=\"https://invariantlabs.ai/blog/mcp-security-notification-tool-poisoning-attacks\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "tool_poisoning()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 63,
+          "function_name": "tool_poisoning",
+          "code": "text(\"So we treat a tool description as **untrusted input**, just like a web page. Next we see how the attack can change over time.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "So we treat a tool description as **untrusted input**, just like a web page. Next we see how the attack can change over time.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 11,
+          "function_name": "main",
+          "code": "rug_pulls_and_shadowing()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 66,
+          "function_name": "rug_pulls_and_shadowing",
+          "code": "def rug_pulls_and_shadowing():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 11,
+          "function_name": "main",
+          "code": "rug_pulls_and_shadowing()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 67,
+          "function_name": "rug_pulls_and_shadowing",
+          "code": "text(\"## 04 · Rug Pulls and Shadowing\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 04 · Rug Pulls and Shadowing",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 11,
+          "function_name": "main",
+          "code": "rug_pulls_and_shadowing()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 68,
+          "function_name": "rug_pulls_and_shadowing",
+          "code": "text(\"Tool poisoning also comes in quieter forms. *Invariant Labs* describes two of them.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Tool poisoning also comes in quieter forms. *Invariant Labs* describes two of them.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 11,
+          "function_name": "main",
+          "code": "rug_pulls_and_shadowing()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 69,
+          "function_name": "rug_pulls_and_shadowing",
+          "code": "text(\"- In a **rug pull**, the user approves a harmless server. Later, the server changes its tool description.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- In a **rug pull**, the user approves a harmless server. Later, the server changes its tool description.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 11,
+          "function_name": "main",
+          "code": "rug_pulls_and_shadowing()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 70,
+          "function_name": "rug_pulls_and_shadowing",
+          "code": "text(figure(\"images/l21_invariant_rugpull.png\", \"The user installs a benign service, and at use time it is swapped for an injected one.\", \"invariant\", \"Invariant Labs, rug pull. Installation time is on the left, and use time is on the right.\", width=430))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l21_invariant_rugpull.png\"><img src=\"images/l21_invariant_rugpull.png\" alt=\"The user installs a benign service, and at use time it is swapped for an injected one.\" style=\"max-width:430px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-2\" aria-label=\"Reference 2: MCP Security Notification: Tool Poisoning Attacks\">[2]</a> Invariant Labs, rug pull. Installation time is on the left, and use time is on the right.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 11,
+          "function_name": "main",
+          "code": "rug_pulls_and_shadowing()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 71,
+          "function_name": "rug_pulls_and_shadowing",
+          "code": "text(\"- So an old approval may not cover the description the model reads today.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- So an old approval may not cover the description the model reads today.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 11,
+          "function_name": "main",
+          "code": "rug_pulls_and_shadowing()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 72,
+          "function_name": "rug_pulls_and_shadowing",
+          "code": "text(\"- In **shadowing**, one server's description changes how the agent uses another server's tool.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- In **shadowing**, one server's description changes how the agent uses another server's tool.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 11,
+          "function_name": "main",
+          "code": "rug_pulls_and_shadowing()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 73,
+          "function_name": "rug_pulls_and_shadowing",
+          "code": "text(figure(\"images/l21_invariant_shadow.png\", \"An injected service changes how the agent uses a trusted send_email tool.\", \"invariant\", \"Invariant Labs, shadowing. The user asks for an email to alice@mail.com.\", width=560))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l21_invariant_shadow.png\"><img src=\"images/l21_invariant_shadow.png\" alt=\"An injected service changes how the agent uses a trusted send_email tool.\" style=\"max-width:560px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-2\" aria-label=\"Reference 2: MCP Security Notification: Tool Poisoning Attacks\">[2]</a> Invariant Labs, shadowing. The user asks for an email to alice@mail.com.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 11,
+          "function_name": "main",
+          "code": "rug_pulls_and_shadowing()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 74,
+          "function_name": "rug_pulls_and_shadowing",
+          "code": "text(\"- In this example, a poisoned tool tells the agent to send every email to the attacker. The trusted email tool then does the sending.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- In this example, a poisoned tool tells the agent to send every email to the attacker. The trusted email tool then does the sending.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 11,
+          "function_name": "main",
+          "code": "rug_pulls_and_shadowing()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 75,
+          "function_name": "rug_pulls_and_shadowing",
+          "code": "text(\"So we need to know **where each rule came from**. Next we ask how real clients handle these attacks.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "So we need to know **where each rule came from**. Next we ask how real clients handle these attacks.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 12,
+          "function_name": "main",
+          "code": "real_clients()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 78,
+          "function_name": "real_clients",
+          "code": "def real_clients():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 12,
+          "function_name": "main",
+          "code": "real_clients()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 79,
+          "function_name": "real_clients",
+          "code": "text(\"## 05 · How Real Clients Respond\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 05 · How Real Clients Respond",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 12,
+          "function_name": "main",
+          "code": "real_clients()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 80,
+          "function_name": "real_clients",
+          "code": "text(\"The same threat modeling work tests these attacks on seven real MCP clients.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "The same threat modeling work tests these attacks on seven real MCP clients.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 12,
+          "function_name": "main",
+          "code": "real_clients()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 81,
+          "function_name": "real_clients",
+          "code": "text(figure(\"images/l21_mcpthreat_tab19.png\", \"Table of four attacks against seven MCP clients, colored safe, partial, or unsafe.\", \"mcpthreat\", \"MCP Threat Modeling, Table 19. Green is safe, yellow is partial, and red is unsafe.\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l21_mcpthreat_tab19.png\"><img src=\"images/l21_mcpthreat_tab19.png\" alt=\"Table of four attacks against seven MCP clients, colored safe, partial, or unsafe.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: Model Context Protocol Threat Modeling and Analyzing Vulnerabilities to Prompt Injection with Tool Poisoning\">[1]</a> MCP Threat Modeling, Table 19. Green is safe, yellow is partial, and red is unsafe.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 12,
+          "function_name": "main",
+          "code": "real_clients()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 82,
+          "function_name": "real_clients",
+          "code": "text(\"- Each row is an attack, such as reading files or remote code execution. Each column is a client.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Each row is an attack, such as reading files or remote code execution. Each column is a client.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 12,
+          "function_name": "main",
+          "code": "real_clients()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 83,
+          "function_name": "real_clients",
+          "code": "text(\"- Results vary a lot from client to client. Five of the seven clients do not **validate tool descriptions** before use.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Results vary a lot from client to client. Five of the seven clients do not **validate tool descriptions** before use.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 12,
+          "function_name": "main",
+          "code": "real_clients()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 84,
+          "function_name": "real_clients",
+          "code": "text(\"- These clients were tested in November 2025, and newer versions may behave differently.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- These clients were tested in November 2025, and newer versions may behave differently.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 12,
+          "function_name": "main",
+          "code": "real_clients()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 85,
+          "function_name": "real_clients",
+          "code": "text(\"So when your client, model, or settings change, you rerun the tests. Next we move from case studies to a benchmark.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "So when your client, model, or settings change, you rerun the tests. Next we move from case studies to a benchmark.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 12,
+          "function_name": "main",
+          "code": "real_clients()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "mcptox()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "mcptox()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 88,
+          "function_name": "mcptox",
+          "code": "def mcptox():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "mcptox()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 89,
+          "function_name": "mcptox",
+          "code": "text(\"## 06 · MCPTox: A Benchmark for Tool Poisoning\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 06 · MCPTox: A Benchmark for Tool Poisoning",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "mcptox()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 90,
+          "function_name": "mcptox",
+          "code": "text(\"Case studies show that an attack is possible. To see how often it works, we need a benchmark. This work, *MCPTox*, builds one from real MCP servers.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Case studies show that an attack is possible. To see how often it works, we need a benchmark. This work, *MCPTox*, builds one from real MCP servers.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "mcptox()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 91,
+          "function_name": "mcptox",
+          "code": "text(card(\"mcptox\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<article id=\"ref-3\" class=\"reference-card\"><img src=\"images/l21_title_mcptox.png\" alt=\"\" loading=\"lazy\"><div><h3>[3] MCPTox: A Benchmark for Tool Poisoning Attack on Real-World MCP Servers</h3><p class=\"reference-meta\">Wang, Gao, Wang, et al. · AAAI 2026</p><p>A benchmark of tool poisoning built on 45 real MCP servers.</p><div class=\"reference-links\"><a href=\"https://ojs.aaai.org/index.php/AAAI/article/view/40895\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "mcptox()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 92,
+          "function_name": "mcptox",
+          "code": "text(\"- It uses **45 real servers**, **353 tools**, and **1,348 test cases**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- It uses **45 real servers**, **353 tools**, and **1,348 test cases**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "mcptox()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 93,
+          "function_name": "mcptox",
+          "code": "text(\"- The agent carries out a normal task. The attacker only changes the metadata of one tool.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The agent carries out a normal task. The attacker only changes the metadata of one tool.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "mcptox()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 94,
+          "function_name": "mcptox",
+          "code": "text(\"- The test checks whether the agent ends up following the attacker's goal.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The test checks whether the agent ends up following the attacker's goal.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "mcptox()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 95,
+          "function_name": "mcptox",
+          "code": "text(figure(\"images/l21_mcptox_fig2.png\", \"MCPTox pipeline with a poisoned security_check tool and three evaluation outcomes.\", \"mcptox\", \"MCPTox, Figure 2.\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l21_mcptox_fig2.png\"><img src=\"images/l21_mcptox_fig2.png\" alt=\"MCPTox pipeline with a poisoned security_check tool and three evaluation outcomes.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-3\" aria-label=\"Reference 3: MCPTox: A Benchmark for Tool Poisoning Attack on Real-World MCP Servers\">[3]</a> MCPTox, Figure 2.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "mcptox()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 96,
+          "function_name": "mcptox",
+          "code": "text(\"The poisoned tool never needs to be called. The model reads its description while it picks other tools. Next we look at the results.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "The poisoned tool never needs to be called. The model reads its description while it picks other tools. Next we look at the results.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "which_attacks_work()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 99,
+          "function_name": "which_attacks_work",
+          "code": "def which_attacks_work():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "which_attacks_work()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 100,
+          "function_name": "which_attacks_work",
+          "code": "text(\"## 07 · Which Attacks Work Best\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 07 · Which Attacks Work Best",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "which_attacks_work()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 101,
+          "function_name": "which_attacks_work",
+          "code": "text(\"Now we look at how often these attacks succeed. ASR means attack success rate, so a higher bar is worse.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Now we look at how often these attacks succeed. ASR means attack success rate, so a higher bar is worse.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "which_attacks_work()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 102,
+          "function_name": "which_attacks_work",
+          "code": "text(figure(\"images/l21_mcptox_fig1b.png\", \"Attack success rate for about twenty models.\", \"mcptox\", \"MCPTox, Figure 1b. Each bar is one model.\", width=620))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l21_mcptox_fig1b.png\"><img src=\"images/l21_mcptox_fig1b.png\" alt=\"Attack success rate for about twenty models.\" style=\"max-width:620px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-3\" aria-label=\"Reference 3: MCPTox: A Benchmark for Tool Poisoning Attack on Real-World MCP Servers\">[3]</a> MCPTox, Figure 1b. Each bar is one model.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "which_attacks_work()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 103,
+          "function_name": "which_attacks_work",
+          "code": "text(\"- Several models are fooled more than 60% of the time. A strong general model is not automatically a safe one.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Several models are fooled more than 60% of the time. A strong general model is not automatically a safe one.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "which_attacks_work()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 104,
+          "function_name": "which_attacks_work",
+          "code": "text(\"- The authors compare three kinds of attack. In **P3**, the agent calls the right tool with **the wrong arguments**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The authors compare three kinds of attack. In **P3**, the agent calls the right tool with **the wrong arguments**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "which_attacks_work()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 105,
+          "function_name": "which_attacks_work",
+          "code": "text(figure(\"images/l21_mcptox_fig5.png\", \"Average ASR for attack paradigms P1, P2, P3, and for stronger prompt wording.\", \"mcptox\", \"MCPTox, Figure 5. Left, three attack paradigms. Right, stronger wording of the attack.\", width=560))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l21_mcptox_fig5.png\"><img src=\"images/l21_mcptox_fig5.png\" alt=\"Average ASR for attack paradigms P1, P2, P3, and for stronger prompt wording.\" style=\"max-width:560px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-3\" aria-label=\"Reference 3: MCPTox: A Benchmark for Tool Poisoning Attack on Real-World MCP Servers\">[3]</a> MCPTox, Figure 5. Left, three attack paradigms. Right, stronger wording of the attack.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "which_attacks_work()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 106,
+          "function_name": "which_attacks_work",
+          "code": "text(\"- P3 succeeds most often, almost half the time on average.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- P3 succeeds most often, almost half the time on average.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "which_attacks_work()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 107,
+          "function_name": "which_attacks_work",
+          "code": "text(\"This means a check on the tool name alone can miss the attack. Here is a small sketch in Python, as **our own example**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "This means a check on the tool name alone can miss the attack. Here is a small sketch in Python, as **our own example**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "which_attacks_work()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 108,
+          "function_name": "which_attacks_work",
+          "code": "call = ToolCall(tool=\"send_email\", to=\"attkr@pwnd.com\")"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "which_attacks_work()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 109,
+          "function_name": "which_attacks_work",
+          "code": "name_ok = call.tool in APPROVED_TOOLS  # @inspect name_ok"
+        }
+      ],
+      "env": {
+        "name_ok": {
+          "type": "bool",
+          "contents": true,
+          "dtype": null,
+          "shape": null
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "which_attacks_work()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 110,
+          "function_name": "which_attacks_work",
+          "code": "args_ok = recipient_is_known(call)  # @stepover @clear name_ok @inspect args_ok"
+        }
+      ],
+      "env": {
+        "args_ok": {
+          "type": "bool",
+          "contents": false,
+          "dtype": null,
+          "shape": null
+        },
+        "name_ok": null
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "which_attacks_work()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 111,
+          "function_name": "which_attacks_work",
+          "code": "text(\"The tool name passes the check, and the recipient fails it. So we check **the complete arguments** before a tool runs. Next we ask how attackers find such inputs.\")  # @clear args_ok"
+        }
+      ],
+      "env": {
+        "args_ok": null
+      },
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "The tool name passes the check, and the recipient fails it. So we check **the complete arguments** before a tool runs. Next we ask how attackers find such inputs.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 17,
+          "function_name": "main",
+          "code": "agentvigil()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 114,
+          "function_name": "agentvigil",
+          "code": "def agentvigil():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 17,
+          "function_name": "main",
+          "code": "agentvigil()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 115,
+          "function_name": "agentvigil",
+          "code": "text(\"## 08 · AgentVigil: Attacks That Learn from Feedback\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 08 · AgentVigil: Attacks That Learn from Feedback",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 17,
+          "function_name": "main",
+          "code": "agentvigil()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 116,
+          "function_name": "agentvigil",
+          "code": "text(\"So far the attacks were written by hand. This work, *AgentVigil*, generates them automatically and learns from each attempt.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "So far the attacks were written by hand. This work, *AgentVigil*, generates them automatically and learns from each attempt.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 17,
+          "function_name": "main",
+          "code": "agentvigil()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 117,
+          "function_name": "agentvigil",
+          "code": "text(card(\"agentvigil\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<article id=\"ref-4\" class=\"reference-card\"><img src=\"images/l21_title_agentvigil.png\" alt=\"\" loading=\"lazy\"><div><h3>[4] AgentVigil: Automatic Black-Box Red-teaming for Indirect Prompt Injection against LLM Agents</h3><p class=\"reference-meta\">Wang, Siu, Ye, et al. · Findings of EMNLP 2025</p><p>Generates injection attacks with seed mutation and tree search.</p><div class=\"reference-links\"><a href=\"https://aclanthology.org/2025.findings-emnlp.1258/\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 17,
+          "function_name": "main",
+          "code": "agentvigil()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 118,
+          "function_name": "agentvigil",
+          "code": "text(\"- It starts from seed attacks and changes them with a mutator.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- It starts from seed attacks and changes them with a mutator.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 17,
+          "function_name": "main",
+          "code": "agentvigil()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 119,
+          "function_name": "agentvigil",
+          "code": "text(\"- It sends each attack to the agent through external data, and a scorer checks the result.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- It sends each attack to the agent through external data, and a scorer checks the result.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 17,
+          "function_name": "main",
+          "code": "agentvigil()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 120,
+          "function_name": "agentvigil",
+          "code": "text(\"- A tree search picks which seeds to explore next.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- A tree search picks which seeds to explore next.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 17,
+          "function_name": "main",
+          "code": "agentvigil()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 121,
+          "function_name": "agentvigil",
+          "code": "text(figure(\"images/l21_agentvigil_fig2.png\", \"The agent system on the left and the seed, mutator, scorer loop on the right.\", \"agentvigil\", \"AgentVigil, Figure 2. The agent is on the left, and the test loop is on the right.\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l21_agentvigil_fig2.png\"><img src=\"images/l21_agentvigil_fig2.png\" alt=\"The agent system on the left and the seed, mutator, scorer loop on the right.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-4\" aria-label=\"Reference 4: AgentVigil: Automatic Black-Box Red-teaming for Indirect Prompt Injection against LLM Agents\">[4]</a> AgentVigil, Figure 2. The agent is on the left, and the test loop is on the right.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 17,
+          "function_name": "main",
+          "code": "agentvigil()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 122,
+          "function_name": "agentvigil",
+          "code": "text(\"- Removing the good starting seeds, or the seed selection, lowers coverage.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Removing the good starting seeds, or the seed selection, lowers coverage.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 17,
+          "function_name": "main",
+          "code": "agentvigil()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 123,
+          "function_name": "agentvigil",
+          "code": "text(figure(\"images/l21_agentvigil_fig3.png\", \"Coverage over ten steps for the full method and two ablations.\", \"agentvigil\", \"AgentVigil, Figure 3. Higher coverage means attacks succeed on more tasks.\", width=460))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l21_agentvigil_fig3.png\"><img src=\"images/l21_agentvigil_fig3.png\" alt=\"Coverage over ten steps for the full method and two ablations.\" style=\"max-width:460px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-4\" aria-label=\"Reference 4: AgentVigil: Automatic Black-Box Red-teaming for Indirect Prompt Injection against LLM Agents\">[4]</a> AgentVigil, Figure 3. Higher coverage means attacks succeed on more tasks.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 17,
+          "function_name": "main",
+          "code": "agentvigil()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 124,
+          "function_name": "agentvigil",
+          "code": "text(\"Recall the attack budget from last lecture. An attacker that learns needs fewer tries, so we compare methods **at the same budget**. Next we turn from attacks to controls.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Recall the attack budget from last lecture. An attacker that learns needs fewer tries, so we compare methods **at the same budget**. Next we turn from attacks to controls.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 17,
+          "function_name": "main",
+          "code": "agentvigil()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "protocol_rules()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "protocol_rules()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 127,
+          "function_name": "protocol_rules",
+          "code": "def protocol_rules():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "protocol_rules()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 128,
+          "function_name": "protocol_rules",
+          "code": "text(\"## 09 · What the Protocol Requires\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 09 · What the Protocol Requires",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "protocol_rules()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 129,
+          "function_name": "protocol_rules",
+          "code": "text(\"We have seen how attacks reach the model. Now we follow the model's output outward. Before a tool call runs, other software still has a chance to stop it. Let's first look at what the MCP specification asks for.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "We have seen how attacks reach the model. Now we follow the model's output outward. Before a tool call runs, other software still has a chance to stop it. Let's first look at what the MCP specification asks for.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "protocol_rules()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 130,
+          "function_name": "protocol_rules",
+          "code": "text(card(\"mcpspec\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<article id=\"ref-5\" class=\"reference-card\"><img src=\"images/l21_mcpspec_tools.png\" alt=\"\" loading=\"lazy\"><div><h3>[5] Model Context Protocol Specification and Security Best Practices</h3><p class=\"reference-meta\">modelcontextprotocol.io · version 2026-07-28</p><p>The protocol rules for servers and clients, and the official security guide.</p><div class=\"reference-links\"><a href=\"https://modelcontextprotocol.io/docs/2026-07-28/tutorials/security\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "protocol_rules()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 131,
+          "function_name": "protocol_rules",
+          "code": "text(\"- Servers **must** validate inputs, control access, and sanitize outputs.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Servers **must** validate inputs, control access, and sanitize outputs.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "protocol_rules()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 132,
+          "function_name": "protocol_rules",
+          "code": "text(\"- Clients **should** ask the user before sensitive operations, and let the user deny a tool call.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Clients **should** ask the user before sensitive operations, and let the user deny a tool call.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "protocol_rules()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 133,
+          "function_name": "protocol_rules",
+          "code": "text(figure(\"images/l21_mcpspec_tools.png\", \"Lists of what MCP servers must do and what clients should do.\", \"mcpspec\", \"MCP specification, Tools, Security Considerations.\", width=430))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l21_mcpspec_tools.png\"><img src=\"images/l21_mcpspec_tools.png\" alt=\"Lists of what MCP servers must do and what clients should do.\" style=\"max-width:430px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-5\" aria-label=\"Reference 5: Model Context Protocol Specification and Security Best Practices\">[5]</a> MCP specification, Tools, Security Considerations.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "protocol_rules()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 134,
+          "function_name": "protocol_rules",
+          "code": "text(\"- Tool annotations, such as a hint that a tool only reads, are claims made by the server. The specification says to treat them as untrusted unless the server is trusted.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Tool annotations, such as a hint that a tool only reads, are claims made by the server. The specification says to treat them as untrusted unless the server is trusted.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 20,
+          "function_name": "main",
+          "code": "protocol_rules()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 135,
+          "function_name": "protocol_rules",
+          "code": "text(\"A rule on paper does not prove that a client follows it. Recall that five of seven clients skipped validation. So we check **what the implementation enforces**. Next we look at failures that happen even without a model.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "A rule on paper does not prove that a client follows it. Recall that five of seven clients skipped validation. So we check **what the implementation enforces**. Next we look at failures that happen even without a model.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "confused_deputy()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 138,
+          "function_name": "confused_deputy",
+          "code": "def confused_deputy():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "confused_deputy()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 139,
+          "function_name": "confused_deputy",
+          "code": "text(\"## 10 · The Confused Deputy\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 10 · The Confused Deputy",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "confused_deputy()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 140,
+          "function_name": "confused_deputy",
+          "code": "text(\"Some attacks around agents do not involve the model at all. The MCP security guide describes a **confused deputy**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Some attacks around agents do not involve the model at all. The MCP security guide describes a **confused deputy**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "confused_deputy()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 141,
+          "function_name": "confused_deputy",
+          "code": "text(\"- A proxy server holds permissions that the attacker lacks.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- A proxy server holds permissions that the attacker lacks.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "confused_deputy()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 142,
+          "function_name": "confused_deputy",
+          "code": "text(\"- The attacker tricks the proxy into using those permissions on the attacker's behalf.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The attacker tricks the proxy into using those permissions on the attacker's behalf.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "confused_deputy()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 143,
+          "function_name": "confused_deputy",
+          "code": "text(figure(\"images/l21_deputy_setup.png\", \"Sequence diagram where a consent cookie lets the request skip consent.\", \"mcpspec\", \"MCP Security Best Practices, confused deputy. A stored consent cookie lets the request skip the consent screen.\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l21_deputy_setup.png\"><img src=\"images/l21_deputy_setup.png\" alt=\"Sequence diagram where a consent cookie lets the request skip consent.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-5\" aria-label=\"Reference 5: Model Context Protocol Specification and Security Best Practices\">[5]</a> MCP Security Best Practices, confused deputy. A stored consent cookie lets the request skip the consent screen.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "confused_deputy()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 144,
+          "function_name": "confused_deputy",
+          "code": "text(\"- By the end, the attacker reaches a third party API **as the user**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- By the end, the attacker reaches a third party API **as the user**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "confused_deputy()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 145,
+          "function_name": "confused_deputy",
+          "code": "text(figure(\"images/l21_deputy_attack.png\", \"Sequence diagram ending with the attacker impersonating the user.\", \"mcpspec\", \"MCP Security Best Practices, confused deputy, the rest of the attack.\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l21_deputy_attack.png\"><img src=\"images/l21_deputy_attack.png\" alt=\"Sequence diagram ending with the attacker impersonating the user.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-5\" aria-label=\"Reference 5: Model Context Protocol Specification and Security Best Practices\">[5]</a> MCP Security Best Practices, confused deputy, the rest of the attack.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 21,
+          "function_name": "main",
+          "code": "confused_deputy()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 146,
+          "function_name": "confused_deputy",
+          "code": "text(\"A better prompt cannot fix this. We fix it in the authorization code, for example by setting the consent cookie only after the user approves. Next we look at two more risks of this kind.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "A better prompt cannot fix this. We fix it in the authorization code, for example by setting the consent cookie only after the user approves. Next we look at two more risks of this kind.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "urls_and_local_servers()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 149,
+          "function_name": "urls_and_local_servers",
+          "code": "def urls_and_local_servers():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "urls_and_local_servers()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 150,
+          "function_name": "urls_and_local_servers",
+          "code": "text(\"## 11 · Fetching URLs and Running Local Servers\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 11 · Fetching URLs and Running Local Servers",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "urls_and_local_servers()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 151,
+          "function_name": "urls_and_local_servers",
+          "code": "text(\"Two more risks come from ordinary software. Let's first look at **server side request forgery**, or SSRF.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Two more risks come from ordinary software. Let's first look at **server side request forgery**, or SSRF.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "urls_and_local_servers()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 152,
+          "function_name": "urls_and_local_servers",
+          "code": "text(\"- A malicious server gives the client a URL, and the client fetches it without checking.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- A malicious server gives the client a URL, and the client fetches it without checking.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "urls_and_local_servers()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 153,
+          "function_name": "urls_and_local_servers",
+          "code": "text(\"- The URL points to an internal address, such as a cloud metadata service, and secrets leak back.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The URL points to an internal address, such as a cloud metadata service, and secrets leak back.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "urls_and_local_servers()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 154,
+          "function_name": "urls_and_local_servers",
+          "code": "text(figure(\"images/l21_ssrf.png\", \"The client follows a URL to an internal metadata service.\", \"mcpspec\", \"MCP Security Best Practices, SSRF.\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l21_ssrf.png\"><img src=\"images/l21_ssrf.png\" alt=\"The client follows a URL to an internal metadata service.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-5\" aria-label=\"Reference 5: Model Context Protocol Specification and Security Best Practices\">[5]</a> MCP Security Best Practices, SSRF.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "urls_and_local_servers()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 155,
+          "function_name": "urls_and_local_servers",
+          "code": "text(\"- So the guide says clients should block private and reserved IP ranges.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- So the guide says clients should block private and reserved IP ranges.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "urls_and_local_servers()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 156,
+          "function_name": "urls_and_local_servers",
+          "code": "text(\"- The second risk is a **local server**. It is a program that runs on your machine with your permissions.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The second risk is a **local server**. It is a program that runs on your machine with your permissions.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "urls_and_local_servers()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 157,
+          "function_name": "urls_and_local_servers",
+          "code": "text(figure(\"images/l21_local_server.png\", \"Three attacks on local MCP servers and two example startup commands.\", \"mcpspec\", \"MCP Security Best Practices, local server compromise.\", width=560))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l21_local_server.png\"><img src=\"images/l21_local_server.png\" alt=\"Three attacks on local MCP servers and two example startup commands.\" style=\"max-width:560px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-5\" aria-label=\"Reference 5: Model Context Protocol Specification and Security Best Practices\">[5]</a> MCP Security Best Practices, local server compromise.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "urls_and_local_servers()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 158,
+          "function_name": "urls_and_local_servers",
+          "code": "text(\"Before you install one, you check where it came from and what it can access. Next we see how a coding agent limits this access.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Before you install one, you check where it came from and what it can access. Next we see how a coding agent limits this access.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "codex_controls()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 161,
+          "function_name": "codex_controls",
+          "code": "def codex_controls():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "codex_controls()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 162,
+          "function_name": "codex_controls",
+          "code": "text(\"## 12 · Sandbox, Approval, and Rules in Codex\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 12 · Sandbox, Approval, and Rules in Codex",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "codex_controls()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 163,
+          "function_name": "codex_controls",
+          "code": "text(\"Now let's connect these ideas to a tool you can use. *Codex*, OpenAI's coding agent, separates two settings.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Now let's connect these ideas to a tool you can use. *Codex*, OpenAI's coding agent, separates two settings.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "codex_controls()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 164,
+          "function_name": "codex_controls",
+          "code": "text(card(\"codex\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<article id=\"ref-6\" class=\"reference-card\"><img src=\"images/l21_codex_rules.png\" alt=\"\" loading=\"lazy\"><div><h3>[6] Codex Documentation: Agent Approvals and Security, and Rules</h3><p class=\"reference-meta\">OpenAI · checked October 2026</p><p>How Codex separates the sandbox, the approval policy, and command rules.</p><div class=\"reference-links\"><a href=\"https://learn.chatgpt.com/docs/agent-approvals-security\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "codex_controls()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 165,
+          "function_name": "codex_controls",
+          "code": "text(\"- The **sandbox** limits what a command can read, write, or reach on the network.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The **sandbox** limits what a command can read, write, or reach on the network.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "codex_controls()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 166,
+          "function_name": "codex_controls",
+          "code": "text(\"- The **approval policy** decides when Codex must ask you first.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The **approval policy** decides when Codex must ask you first.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "codex_controls()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 167,
+          "function_name": "codex_controls",
+          "code": "text(figure(\"images/l21_codex_sandbox.png\", \"Codex documentation describing sandbox mode and approval policy.\", \"codex\", \"Codex documentation, Agent approvals and security.\", width=560))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l21_codex_sandbox.png\"><img src=\"images/l21_codex_sandbox.png\" alt=\"Codex documentation describing sandbox mode and approval policy.\" style=\"max-width:560px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-6\" aria-label=\"Reference 6: Codex Documentation: Agent Approvals and Security, and Rules\">[6]</a> Codex documentation, Agent approvals and security.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "codex_controls()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 168,
+          "function_name": "codex_controls",
+          "code": "text(\"- **Rules** add finer control. Each rule matches the start of a command and decides to allow, prompt, or forbid it.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- **Rules** add finer control. Each rule matches the start of a command and decides to allow, prompt, or forbid it.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "codex_controls()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 169,
+          "function_name": "codex_controls",
+          "code": "text(figure(\"images/l21_codex_rules.png\", \"A prefix_rule with pattern gh pr view and decision prompt.\", \"codex\", \"Codex documentation, Rules. This rule asks before running gh pr view.\", width=520))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l21_codex_rules.png\"><img src=\"images/l21_codex_rules.png\" alt=\"A prefix_rule with pattern gh pr view and decision prompt.\" style=\"max-width:520px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-6\" aria-label=\"Reference 6: Codex Documentation: Agent Approvals and Security, and Rules\">[6]</a> Codex documentation, Rules. This rule asks before running gh pr view.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "codex_controls()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 170,
+          "function_name": "codex_controls",
+          "code": "text(\"Here is how such rules work, in a short Python sketch of **our own**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Here is how such rules work, in a short Python sketch of **our own**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "codex_controls()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 171,
+          "function_name": "codex_controls",
+          "code": "decision = decide([\"gh\", \"pr\", \"view\", \"42\"])  # @stepover @inspect decision"
+        }
+      ],
+      "env": {
+        "decision": {
+          "type": "str",
+          "contents": "prompt",
+          "dtype": null,
+          "shape": null
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "codex_controls()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 172,
+          "function_name": "codex_controls",
+          "code": "decision = decide([\"rm\", \"-rf\", \"data\"])  # @stepover @inspect decision"
+        }
+      ],
+      "env": {
+        "decision": {
+          "type": "str",
+          "contents": "forbid",
+          "dtype": null,
+          "shape": null
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "codex_controls()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 173,
+          "function_name": "codex_controls",
+          "code": "text(\"The first command needs your approval, and the second is forbidden. So we keep the workspace small and review actions that leave it. Next we bring these ideas into your own project.\")  # @clear decision"
+        }
+      ],
+      "env": {
+        "decision": null
+      },
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "The first command needs your approval, and the second is forbidden. So we keep the workspace small and review actions that leave it. Next we bring these ideas into your own project.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "codex_controls()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "where_data_goes()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "where_data_goes()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 176,
+          "function_name": "where_data_goes",
+          "code": "def where_data_goes():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "where_data_goes()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 177,
+          "function_name": "where_data_goes",
+          "code": "text(\"## 13 · Where Your Data Goes\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 13 · Where Your Data Goes",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "where_data_goes()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 178,
+          "function_name": "where_data_goes",
+          "code": "text(\"The same questions apply when you use agents for research. Let's first ask **where project material goes**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "The same questions apply when you use agents for research. Let's first ask **where project material goes**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "where_data_goes()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 179,
+          "function_name": "where_data_goes",
+          "code": "text(card(\"aris\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<article id=\"ref-7\" class=\"reference-card\"><img src=\"images/l21_title_aris.png\" alt=\"\" loading=\"lazy\"><div><h3>[7] ARIS: Autonomous Research via Adversarial Multi-Agent Collaboration</h3><p class=\"reference-meta\">arXiv 2605.03042, 2026</p><p>A research agent system whose limitations section discusses where code is sent.</p><div class=\"reference-links\"><a href=\"https://arxiv.org/abs/2605.03042\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "where_data_goes()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 180,
+          "function_name": "where_data_goes",
+          "code": "text(\"- This work, *ARIS*, runs research with one model that writes code and a model from another provider that reviews it.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- This work, *ARIS*, runs research with one model that writes code and a model from another provider that reviews it.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "where_data_goes()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 181,
+          "function_name": "where_data_goes",
+          "code": "text(\"- Its authors warn that a repository review may send source code to **external LLM APIs**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Its authors warn that a repository review may send source code to **external LLM APIs**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "where_data_goes()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 182,
+          "function_name": "where_data_goes",
+          "code": "text(\"- They advise against it for code with secrets, until a local review path exists.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- They advise against it for code with secrets, until a local review path exists.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "where_data_goes()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 183,
+          "function_name": "where_data_goes",
+          "code": "text(\"- Code, logs, data samples, and drafts can each have **different sharing rules**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Code, logs, data samples, and drafts can each have **different sharing rules**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "where_data_goes()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 184,
+          "function_name": "where_data_goes",
+          "code": "text(\"So before you hand work to an agent, you list which service receives which material. Next we look at how to report agent use in a paper.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "So before you hand work to an agent, you list which service receives which material. Next we look at how to report agent use in a paper.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "disclosing_agent_use()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 187,
+          "function_name": "disclosing_agent_use",
+          "code": "def disclosing_agent_use():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "disclosing_agent_use()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 188,
+          "function_name": "disclosing_agent_use",
+          "code": "text(\"## 14 · Disclosing Agent Use\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 14 · Disclosing Agent Use",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "disclosing_agent_use()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 189,
+          "function_name": "disclosing_agent_use",
+          "code": "text(\"Readers of your paper need to know what the agent did. Here is a short checklist, based on our syllabus and the ACL policy on publication ethics.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Readers of your paper need to know what the agent did. Here is a short checklist, based on our syllabus and the ACL policy on publication ethics.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "disclosing_agent_use()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 190,
+          "function_name": "disclosing_agent_use",
+          "code": "text(\"- You name the agent, the model, their versions, and any skills you used.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- You name the agent, the model, their versions, and any skills you used.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "disclosing_agent_use()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 191,
+          "function_name": "disclosing_agent_use",
+          "code": "text(\"- You say which sections and code the agent produced, and who checked them.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- You say which sections and code the agent produced, and who checked them.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "disclosing_agent_use()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 192,
+          "function_name": "disclosing_agent_use",
+          "code": "text(\"- You record the data and code behind each figure, and say whether any images were generated.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- You record the data and code behind each figure, and say whether any images were generated.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "disclosing_agent_use()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 193,
+          "function_name": "disclosing_agent_use",
+          "code": "text(\"- You record who checked the references and which ones were removed.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- You record who checked the references and which ones were removed.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "disclosing_agent_use()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 194,
+          "function_name": "disclosing_agent_use",
+          "code": "text(\"- You keep the session log with your code.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- You keep the session log with your code.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "disclosing_agent_use()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 195,
+          "function_name": "disclosing_agent_use",
+          "code": "text(\"These records let a reader follow what happened. **The authors remain responsible for everything they submit.** Now let's put the lecture together.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "These records let a reader follow what happened. **The authors remain responsible for everything they submit.** Now let's put the lecture together.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 28,
+          "function_name": "main",
+          "code": "summary()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 198,
+          "function_name": "summary",
+          "code": "def summary():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 28,
+          "function_name": "main",
+          "code": "summary()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 199,
+          "function_name": "summary",
+          "code": "text(\"## 15 · Summary\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 15 · Summary",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 28,
+          "function_name": "main",
+          "code": "summary()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 200,
+          "function_name": "summary",
+          "code": "text(\"Let's put the pieces together.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Let's put the pieces together.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 28,
+          "function_name": "main",
+          "code": "summary()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 201,
+          "function_name": "summary",
+          "code": "text(\"- Tool descriptions and tool results are **untrusted input**, just like web pages.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Tool descriptions and tool results are **untrusted input**, just like web pages.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 28,
+          "function_name": "main",
+          "code": "summary()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 202,
+          "function_name": "summary",
+          "code": "text(\"- An attack can pick the right tool with **the wrong arguments**, so we check the complete call.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- An attack can pick the right tool with **the wrong arguments**, so we check the complete call.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 28,
+          "function_name": "main",
+          "code": "summary()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 203,
+          "function_name": "summary",
+          "code": "text(\"- Validation, authorization code, sandboxes, and approvals limit what an action can reach.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Validation, authorization code, sandboxes, and approvals limit what an action can reach.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 28,
+          "function_name": "main",
+          "code": "summary()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 204,
+          "function_name": "summary",
+          "code": "text(\"- Logs and disclosure let others **check what happened**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Logs and disclosure let others **check what happened**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 28,
+          "function_name": "main",
+          "code": "summary()"
+        },
+        {
+          "path": "lecture_21.py",
+          "line_number": 205,
+          "function_name": "summary",
+          "code": "text(\"Now we can answer our two questions. **Where does untrusted text enter, and where can software stop a bad action?**\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Now we can answer our two questions. **Where does untrusted text enter, and where can software stop a bad action?**",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_21.py",
+          "line_number": 28,
+          "function_name": "main",
+          "code": "summary()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    }
+  ]
+}

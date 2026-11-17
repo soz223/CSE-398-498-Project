@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" /><link rel="icon" href="data:,">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CSE 398/498 | Lecture 22</title>
+    <script>
+      const page = new URL(location.href);
+      const directory = page.pathname.replace(/\/index\.html$/, "/").replace(/\/?$/, "/");
+      page.pathname = directory;
+      const base = document.createElement("base");
+      base.href = new URL(directory, page.origin).href;
+      document.head.append(base);
+      if (!page.searchParams.has("trace")) {
+        page.searchParams.set("trace", "lecture_22");
+      }
+      history.replaceState(null, "", page);
+    </script>
+    <script type="module" crossorigin src="./assets/viewer-pages.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CJlPj8BE.css">
+    <link rel="stylesheet" href="./lecture.css?v=20">
+    <script defer src="./lecture.js?v=20"></script>
+  </head>
+  <body>
+    <aside class="lecture-guide" aria-label="How to use these slides">
+      <h1>Paper Reading, Peer Review, and Course Review</h1>
+      <h2>How to use these slides</h2>
+      <p>Use <strong>Jump to section</strong> to browse. Select the sun icon to turn on step by step mode, then use <kbd>←</kbd> and <kbd>→</kbd> to reveal one bullet at a time. Upcoming text stays light gray.</p>
+      <p>Click a figure to enlarge it and press <kbd>Esc</kbd> to close it. Section 07 runs a small Python calculation; its variables appear beside the code while those lines are active.</p>
+    </aside>
+    <div id="root"></div>
+    <dialog id="figure-viewer" aria-labelledby="figure-title">
+      <div class="viewer-toolbar">
+        <strong id="figure-title">Original figure</strong>
+        <button type="button" id="close-figure">Close ×</button>
+      </div>
+      <img id="large-figure" alt="">
+      <a id="original-figure" target="_blank" rel="noopener noreferrer">Open full resolution ↗</a>
+    </dialog>
+  </body>
+</html>

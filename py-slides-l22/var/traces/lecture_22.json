@@ -1,0 +1,3901 @@
+{
+  "files": {
+    "lecture_22.py": "from edtrace import text\nfrom lecture_support import card, figure\n\n\ndef main():\n    # Part 1. Reading and reviewing a paper\n    introduction()\n    reading_a_paper()\n    useful_review_comments()\n    the_review_form()\n\n    # Part 2. AI in peer review\n    venue_rules_and_hidden_prompts()\n    spot()\n    spot_results()\n    feedback_experiment()\n    feedback_results()\n    aaai_pilot()\n    planted_errors()\n\n    # Part 3. Answering reviews of your own paper\n    deciding_how_to_answer()\n    writing_each_answer()\n\n    # Part 4. From reviewing to reproducing, and the course\n    paperbench()\n    course_review()\n\n\ndef introduction():\n    text(\"## 01 · Paper Reading, Peer Review, and Course Review\")\n    text(\"CSE 398/498 · Vibe Research for Scientific Discovery · Lichao Sun · Lehigh University\")\n    text(\"This is our last lecture. All semester we asked agents to produce research results. Today we ask **how a person, or an agent, checks a research result**.\")\n    text(\"- We start with how to **read** a paper and write a useful **review**.\")\n    text(\"- Then we look at new studies of **AI in peer review**.\")\n    text(\"- Next we practice **answering reviews** of our own paper.\")\n    text(\"- Finally we look back at **the whole course**.\")\n    text(\"Today we are going to study two questions. **What does the paper claim, and what evidence supports it?**\")\n\n\ndef reading_a_paper():\n    text(\"## 02 · Reading a Paper for Its Claims\")\n    text(\"Let's first look at how we read a paper. We read in layers, and each layer asks a different question.\")\n    text(\"- First, we read the title, abstract, introduction, and figures. We look for the **main claim**.\")\n    text(\"- Then we read the method and results. We ask **which evidence supports each claim**.\")\n    text(\"- Only when we need it, we read every detail closely enough to rerun or challenge the result.\")\n    text(\"A good abstract helps with the first layer. It answers four questions.\")\n    text(\"- What problem does the paper study, and why does it matter?\")\n    text(\"- What did the authors do, and what did they find?\")\n    text(\"If the abstract skips one of these, we look for the answer in the paper and avoid filling it in ourselves. Next we use this reading to write a review.\")\n\n\ndef useful_review_comments():\n    text(\"## 03 · Writing a Useful Review Comment\")\n    text(\"Now let's switch seats. You have read the paper, and you help others judge it. A useful comment points to **a claim, a method detail, or a result**.\")\n    text(\"- Compare two comments on the same paper. The first one says, \\\"The experiments are insufficient.\\\"\")\n    text(\"- The second one says, \\\"The experiments use only synthetic data. A real dataset would test whether the method generalizes.\\\"\")\n    text(\"- The second comment tells the authors **what is missing** and **why it matters**.\")\n    text(\"- A good suggestion also names a concrete change, such as a relevant published baseline.\")\n    text(\"We ask only for changes that affect a central claim. Next we see how a review form organizes these comments.\")\n\n\ndef the_review_form():\n    text(\"## 04 · The Review Form\")\n    text(\"Each venue gives reviewers a form. Here are the fields of the NeurIPS 2026 form.\")\n    text(card(\"neurips\"))\n    text(figure(\"images/l22_neurips_form.png\", \"Table of NeurIPS review form fields with the handbook's instruction for each.\", \"neurips\", \"NeurIPS 2026 review form, with the handbook's instruction for each field.\", width=640))\n    text(\"- The form separates the **summary**, the **strengths and weaknesses**, and the **scores**.\")\n    text(\"- The written reasons should agree with the score.\")\n    text(\"- Confidence describes how sure you are of your reading. It is separate from how much you like the topic.\")\n    text(\"A complete form still needs specific comments. Now that we know what a good review looks like, we ask what happens when AI joins the process.\")\n\n\ndef venue_rules_and_hidden_prompts():\n    text(\"## 05 · Venue Rules and Hidden Prompts\")\n    text(\"Venues now set rules for AI in reviewing, and the rules differ. You read them for each venue and each year.\")\n    text(card(\"icml\"))\n    text(\"- ICML 2026 offers two policies. Under the first, reviewers use no LLMs. Under the second, they may use LLMs to understand the paper and polish their writing.\")\n    text(figure(\"images/l22_icml_policy.png\", \"ICML 2026 Policy A and Policy B.\", \"icml\", \"ICML 2026 Policy for LLM use in reviewing.\", width=620))\n    text(\"- ICLR 2026 addresses a new attack. Some authors hide instructions in their paper, such as white text that asks for a positive review.\")\n    text(card(\"iclr\"))\n    text(\"- This work by *Lin* found **18 arXiv papers** with such hidden prompts in July 2025.\")\n    text(card(\"lin\"))\n    text(figure(\"images/l22_lin_tab1.png\", \"Table of hidden prompt types with the full prompt text.\", \"lin\", \"Lin, Table 1, the first three types of hidden prompt.\", width=620))\n    text(\"This is the indirect prompt injection we studied in the last two lectures. **The paper is evidence to assess, and its text has no authority over the reviewer.** Next we ask whether AI reviewers can find real problems.\")\n\n\ndef spot():\n    text(\"## 06 · SPOT: Can AI Find Real Errors?\")\n    text(\"A reviewer's main job is to find what is wrong. This work, *SPOT*, tests whether models can find **real errors in published papers**.\")\n    text(card(\"spot\"))\n    text(\"- The authors collect errors from withdrawn arXiv papers and from PubPeer, a site where readers discuss papers.\")\n    text(\"- They keep an error only when the original authors confirm it.\")\n    text(\"- This gives **83 papers** with **91 errors**, such as duplicated figures and wrong equations.\")\n    text(figure(\"images/l22_spot_fig1.png\", \"SPOT pipeline from seed collection and author validation to scoring model responses.\", \"spot\", \"SPOT, Figure 1. Green shows how the benchmark is built, and blue shows how answers are scored.\"))\n    text(\"Each model reads the whole paper, with its text and images, and lists the errors it finds. Next we see how the answers are scored.\")\n\n\ndef spot_results():\n    text(\"## 07 · Precision, Recall, and the SPOT Results\")\n    text(\"We score an error finder with two numbers. **Precision** is the share of flagged issues that are real errors. **Recall** is the share of real errors that get flagged.\")\n    text(\"Here is an example with **made up numbers**. Suppose a paper has 2 known errors. The model flags 10 issues, and 1 of them is a known error.\")\n    known_errors = 2\n    flagged = 10\n    matched = 1\n    precision = matched / flagged  # @inspect precision\n    recall = matched / known_errors  # @clear precision @inspect recall\n    text(f\"So precision is **{precision:.0%}** and recall is **{recall:.0%}**. Now let's read the real results.\")  # @clear recall\n    text(figure(\"images/l22_spot_tab2.png\", \"Precision, recall, pass@1, and pass@4 for ten models.\", \"spot\", \"SPOT, Table 2. Each value is the mean over eight runs, with the standard deviation in small type.\"))\n    text(\"- The best model, o3, finds **21.1%** of the errors, and only **6.1%** of its flags are correct.\")\n    text(\"- Across eight runs, the models rarely find the same error twice.\")\n    text(\"- These models are from early 2025, and newer ones may do better.\")\n    text(\"So AI can help a reviewer search, and **a person still checks every flag**. Next we test AI as a helper for human reviewers.\")\n\n\ndef feedback_experiment():\n    text(\"## 08 · An Experiment with AI Feedback on Reviews\")\n    text(\"AI can also give feedback **on a human review**. This work by *Thakkar et al.* tests this idea at ICLR 2025.\")\n    text(card(\"thakkar\"))\n    text(\"- The papers were split at random into three equal groups. No reviews, half of the reviews, or all reviews received feedback.\")\n    text(\"- Feedback arrived about one hour after a review was submitted.\")\n    text(figure(\"images/l22_thakkar_fig4a.png\", \"Three randomized groups and a timeline from October 15 to November 12.\", \"thakkar\", \"Thakkar et al., Figure 4a.\", width=460))\n    text(\"- The feedback asks reviewers to make vague comments specific, points to parts of the paper that may answer their questions, and flags unprofessional remarks.\")\n    text(figure(\"images/l22_thakkar_fig4c.png\", \"Feedback agent with actors, aggregator, critic, formatter, and reliability tests.\", \"thakkar\", \"Thakkar et al., Figure 4c. A critic and reliability tests check the feedback before it is posted.\"))\n    text(\"The feedback comments on the review and leaves every decision about the paper to people. Because the groups were assigned at random, we can study its effect. Next we look at what changed.\")\n\n\ndef feedback_results():\n    text(\"## 09 · What Changed After Feedback\")\n    text(\"Now we look at how reviewers responded.\")\n    text(figure(\"images/l22_thakkar_fig1a.png\", \"Pie charts of control, feedback, and updated reviews.\", \"thakkar\", \"Thakkar et al., Figure 1a.\", width=300))\n    text(\"- Among reviews that received feedback, **26.6%** were updated. In the control group, **9.4%** were updated.\")\n    text(\"- Receiving feedback differs from being assigned to a group. Some assigned reviews needed no feedback, so the authors compare the randomized groups.\")\n    text(\"This tells us that feedback changed what reviewers did. Whether the reviews got better needs a separate measure. Next we look at a conference that added an AI review to every paper.\")\n\n\ndef aaai_pilot():\n    text(\"## 10 · The AAAI-26 AI Review Pilot\")\n    text(\"This work describes a much larger step. AAAI 2026 added **one AI review to every main track paper** in full review.\")\n    text(card(\"aaai\"))\n    text(\"- The pilot produced AI reviews for 22,977 papers.\")\n    text(\"- Each AI review covers story, presentation, evaluations, correctness, and significance. The system then critiques and refines its own draft.\")\n    text(\"- The AI review gives **no score and no recommendation**. People make every decision.\")\n    text(figure(\"images/l22_aaai_fig1a.png\", \"AAAI-26 AI review system next to the human review process.\", \"aaai\", \"AAAI-26 AI Review Pilot, Figure 1a.\", width=520))\n    text(\"Running at this scale shows the workflow is practical. Accuracy needs its own test, so the authors built a controlled one. Next we look at it.\")\n\n\ndef planted_errors():\n    text(\"## 11 · SPECS: Testing with Planted Errors\")\n    text(\"To measure accuracy, we need errors whose location we know. This test, called **SPECS**, plants them on purpose.\")\n    text(\"- The authors take accepted AAAI-25 papers and insert one error into each.\")\n    text(\"- The error falls into one of five areas, which give the test its name. They are story, presentation, evaluations, correctness, and significance.\")\n    text(\"- A judge model checks whether a review mentions the planted error. The test uses 783 changed papers.\")\n    text(figure(\"images/l22_aaai_fig4a.png\", \"SPECS pipeline from paper curation to perturbation and judging.\", \"aaai\", \"AAAI-26 AI Review Pilot, Figure 4a.\", width=480))\n    text(figure(\"images/l22_aaai_tab2.png\", \"Recall per SPECS criterion for baseline, targeted, and final systems.\", \"aaai\", \"AAAI-26 AI Review Pilot, Table 2.\"))\n    text(\"- Mean recall rises from **0.43** for a baseline to **0.64** for the final system.\")\n    text(\"- On significance, the targeted system beats the final one. A mean can hide such differences.\")\n    text(\"SPOT used real errors, while SPECS plants them. The systems and errors differ, so we do not compare the two numbers directly. Next we turn to the other side and answer reviews of our own paper.\")\n\n\ndef deciding_how_to_answer():\n    text(\"## 12 · Deciding How to Answer\")\n    text(\"Now imagine you receive the reviews of your own paper. Let's first sort the requests, because each kind needs a different answer.\")\n    text(\"- If a reviewer finds a **real error**, you correct it.\")\n    text(\"- If a reviewer asks for **missing evidence**, you add an experiment when it tests a central claim.\")\n    text(\"- If a request **changes the scope** of the paper, you explain the boundary and give a reason.\")\n    text(\"Before you defend a claim, you check whether the reviewer is right. A misunderstanding can also show that your writing is unclear. Next we look at how to write each answer.\")\n\n\ndef writing_each_answer():\n    text(\"## 13 · Writing Each Answer\")\n    text(\"Our course guide writes each answer in three steps. We call them **retrieve, argue, and generate**.\")\n    text(\"- First, you **retrieve** the evidence, such as a line, a table, or prior work.\")\n    text(\"- Then you **argue**. You answer the concern in one sentence and explain what the evidence supports.\")\n    text(\"- Finally, you **generate** the change. You state exactly what will change in the paper.\")\n    text(\"Here is an example. A reviewer says that experimental details are missing.\")\n    text(\"- The authors point to the baseline settings, which follow earlier work and appear in Appendix A.3.\")\n    text(\"- They explain that nodes and labels become text, BERT gives the embeddings, and the data uses an 8:1:1 split.\")\n    text(\"- They promise to add these settings to the paper.\")\n    text(figure(\"images/l22_rebuttal_template.png\", \"A response block with Retrieve, Argue, Generate, and Status fields.\", None, \"Our course template for one reviewer concern.\", width=560))\n    text(\"This structure also helps an agent assist you, because a person can check each source and each promised edit. Next we move from reviewing a paper to reproducing it.\")\n\n\ndef paperbench():\n    text(\"## 14 · PaperBench: Reproducing a Paper\")\n    text(\"Reading and reviewing check a claim on paper. Reproducing the experiment is a stronger check. This work, *PaperBench*, asks an agent to reproduce a paper **from scratch**.\")\n    text(card(\"paperbench\"))\n    text(\"- The agent reads a paper and builds a code repository.\")\n    text(\"- A judge runs the code and grades it against a detailed rubric.\")\n    text(\"- The benchmark has **20 ICML 2024 papers** and **8,316 grading criteria**, written with the original authors.\")\n    text(figure(\"images/l22_paperbench_fig1.png\", \"Agent, submission, reproduction, and rubric grading.\", \"paperbench\", \"PaperBench, Figure 1. The score inside the figure is only an example.\"))\n    text(\"- Each model ran three times per paper, with up to 12 hours per run. The best agent meets **21.0%** of the rubric.\")\n    text(figure(\"images/l22_paperbench_tab3.png\", \"Average replication scores for six models.\", \"paperbench\", \"PaperBench, Table 3.\", width=420))\n    text(\"These models are from early 2025, and newer agents may score higher. The lesson stays the same. **We ask which part of a result was reproduced, and what evidence was saved.** Now let's look back at the whole course.\")\n\n\ndef course_review():\n    text(\"## 15 · Looking Back at the Course\")\n    text(\"Let's put the whole course together.\")\n    text(figure(\"images/l22_course_schedule.png\", \"Weekly schedule of CSE 398/498 in Fall 2026.\", None, \"CSE 398/498 syllabus, Fall 2026.\", width=640))\n    text(\"- In weeks 1 to 3, we learned that an agent is a model running in a loop with an environment.\")\n    text(\"- In weeks 4 and 5, we studied how agents **reason and plan**.\")\n    text(\"- In weeks 6 to 8, we gave agents **memory, retrieval, and tools**.\")\n    text(\"- In weeks 9 and 10, we built **harnesses** and **coding agents**.\")\n    text(\"- In weeks 11 to 14, we studied **research agents**, **evaluation**, **security**, and today, **review**.\")\n    text(\"Your final project brings these pieces together. Final presentations and live demonstrations are on **Thursday, December 3**.\")\n    text(\"One habit connects every lecture. **Keep the task, the evidence, the actions, and the evaluation connected, so another person can check how a result was reached.**\")\n    text(\"Whenever you read a result, ask our two questions. **What does it claim, and what evidence supports it?** Thank you for a great semester.\")\n"
+  },
+  "hidden_line_numbers": {
+    "lecture_22.py": []
+  },
+  "steps": [
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 5,
+          "function_name": "main",
+          "code": "def main():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 7,
+          "function_name": "main",
+          "code": "introduction()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 7,
+          "function_name": "main",
+          "code": "introduction()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 30,
+          "function_name": "introduction",
+          "code": "def introduction():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 7,
+          "function_name": "main",
+          "code": "introduction()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 31,
+          "function_name": "introduction",
+          "code": "text(\"## 01 · Paper Reading, Peer Review, and Course Review\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 01 · Paper Reading, Peer Review, and Course Review",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 7,
+          "function_name": "main",
+          "code": "introduction()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 32,
+          "function_name": "introduction",
+          "code": "text(\"CSE 398/498 · Vibe Research for Scientific Discovery · Lichao Sun · Lehigh University\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "CSE 398/498 · Vibe Research for Scientific Discovery · Lichao Sun · Lehigh University",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 7,
+          "function_name": "main",
+          "code": "introduction()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 33,
+          "function_name": "introduction",
+          "code": "text(\"This is our last lecture. All semester we asked agents to produce research results. Today we ask **how a person, or an agent, checks a research result**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "This is our last lecture. All semester we asked agents to produce research results. Today we ask **how a person, or an agent, checks a research result**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 7,
+          "function_name": "main",
+          "code": "introduction()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 34,
+          "function_name": "introduction",
+          "code": "text(\"- We start with how to **read** a paper and write a useful **review**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- We start with how to **read** a paper and write a useful **review**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 7,
+          "function_name": "main",
+          "code": "introduction()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 35,
+          "function_name": "introduction",
+          "code": "text(\"- Then we look at new studies of **AI in peer review**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Then we look at new studies of **AI in peer review**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 7,
+          "function_name": "main",
+          "code": "introduction()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 36,
+          "function_name": "introduction",
+          "code": "text(\"- Next we practice **answering reviews** of our own paper.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Next we practice **answering reviews** of our own paper.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 7,
+          "function_name": "main",
+          "code": "introduction()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 37,
+          "function_name": "introduction",
+          "code": "text(\"- Finally we look back at **the whole course**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Finally we look back at **the whole course**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 7,
+          "function_name": "main",
+          "code": "introduction()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 38,
+          "function_name": "introduction",
+          "code": "text(\"Today we are going to study two questions. **What does the paper claim, and what evidence supports it?**\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Today we are going to study two questions. **What does the paper claim, and what evidence supports it?**",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "reading_a_paper()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 41,
+          "function_name": "reading_a_paper",
+          "code": "def reading_a_paper():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "reading_a_paper()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 42,
+          "function_name": "reading_a_paper",
+          "code": "text(\"## 02 · Reading a Paper for Its Claims\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 02 · Reading a Paper for Its Claims",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "reading_a_paper()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 43,
+          "function_name": "reading_a_paper",
+          "code": "text(\"Let's first look at how we read a paper. We read in layers, and each layer asks a different question.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Let's first look at how we read a paper. We read in layers, and each layer asks a different question.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "reading_a_paper()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 44,
+          "function_name": "reading_a_paper",
+          "code": "text(\"- First, we read the title, abstract, introduction, and figures. We look for the **main claim**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- First, we read the title, abstract, introduction, and figures. We look for the **main claim**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "reading_a_paper()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 45,
+          "function_name": "reading_a_paper",
+          "code": "text(\"- Then we read the method and results. We ask **which evidence supports each claim**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Then we read the method and results. We ask **which evidence supports each claim**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "reading_a_paper()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 46,
+          "function_name": "reading_a_paper",
+          "code": "text(\"- Only when we need it, we read every detail closely enough to rerun or challenge the result.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Only when we need it, we read every detail closely enough to rerun or challenge the result.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "reading_a_paper()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 47,
+          "function_name": "reading_a_paper",
+          "code": "text(\"A good abstract helps with the first layer. It answers four questions.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "A good abstract helps with the first layer. It answers four questions.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "reading_a_paper()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 48,
+          "function_name": "reading_a_paper",
+          "code": "text(\"- What problem does the paper study, and why does it matter?\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- What problem does the paper study, and why does it matter?",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "reading_a_paper()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 49,
+          "function_name": "reading_a_paper",
+          "code": "text(\"- What did the authors do, and what did they find?\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- What did the authors do, and what did they find?",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 8,
+          "function_name": "main",
+          "code": "reading_a_paper()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 50,
+          "function_name": "reading_a_paper",
+          "code": "text(\"If the abstract skips one of these, we look for the answer in the paper and avoid filling it in ourselves. Next we use this reading to write a review.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "If the abstract skips one of these, we look for the answer in the paper and avoid filling it in ourselves. Next we use this reading to write a review.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 9,
+          "function_name": "main",
+          "code": "useful_review_comments()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 53,
+          "function_name": "useful_review_comments",
+          "code": "def useful_review_comments():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 9,
+          "function_name": "main",
+          "code": "useful_review_comments()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 54,
+          "function_name": "useful_review_comments",
+          "code": "text(\"## 03 · Writing a Useful Review Comment\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 03 · Writing a Useful Review Comment",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 9,
+          "function_name": "main",
+          "code": "useful_review_comments()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 55,
+          "function_name": "useful_review_comments",
+          "code": "text(\"Now let's switch seats. You have read the paper, and you help others judge it. A useful comment points to **a claim, a method detail, or a result**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Now let's switch seats. You have read the paper, and you help others judge it. A useful comment points to **a claim, a method detail, or a result**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 9,
+          "function_name": "main",
+          "code": "useful_review_comments()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 56,
+          "function_name": "useful_review_comments",
+          "code": "text(\"- Compare two comments on the same paper. The first one says, \\\"The experiments are insufficient.\\\"\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Compare two comments on the same paper. The first one says, \"The experiments are insufficient.\"",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 9,
+          "function_name": "main",
+          "code": "useful_review_comments()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 57,
+          "function_name": "useful_review_comments",
+          "code": "text(\"- The second one says, \\\"The experiments use only synthetic data. A real dataset would test whether the method generalizes.\\\"\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The second one says, \"The experiments use only synthetic data. A real dataset would test whether the method generalizes.\"",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 9,
+          "function_name": "main",
+          "code": "useful_review_comments()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 58,
+          "function_name": "useful_review_comments",
+          "code": "text(\"- The second comment tells the authors **what is missing** and **why it matters**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The second comment tells the authors **what is missing** and **why it matters**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 9,
+          "function_name": "main",
+          "code": "useful_review_comments()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 59,
+          "function_name": "useful_review_comments",
+          "code": "text(\"- A good suggestion also names a concrete change, such as a relevant published baseline.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- A good suggestion also names a concrete change, such as a relevant published baseline.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 9,
+          "function_name": "main",
+          "code": "useful_review_comments()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 60,
+          "function_name": "useful_review_comments",
+          "code": "text(\"We ask only for changes that affect a central claim. Next we see how a review form organizes these comments.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "We ask only for changes that affect a central claim. Next we see how a review form organizes these comments.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "the_review_form()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 63,
+          "function_name": "the_review_form",
+          "code": "def the_review_form():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "the_review_form()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 64,
+          "function_name": "the_review_form",
+          "code": "text(\"## 04 · The Review Form\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 04 · The Review Form",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "the_review_form()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 65,
+          "function_name": "the_review_form",
+          "code": "text(\"Each venue gives reviewers a form. Here are the fields of the NeurIPS 2026 form.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Each venue gives reviewers a form. Here are the fields of the NeurIPS 2026 form.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "the_review_form()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 66,
+          "function_name": "the_review_form",
+          "code": "text(card(\"neurips\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<article id=\"ref-1\" class=\"reference-card\"><img src=\"images/l22_neurips_form.png\" alt=\"\" loading=\"lazy\"><div><h3>[1] NeurIPS 2026 Reviewer Guidelines and Review Form</h3><p class=\"reference-meta\">NeurIPS · 2026</p><p>The fields every NeurIPS 2026 reviewer fills in, with instructions for each.</p><div class=\"reference-links\"><a href=\"https://neurips.cc/Conferences/2026/ReviewerGuidelines\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "the_review_form()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 67,
+          "function_name": "the_review_form",
+          "code": "text(figure(\"images/l22_neurips_form.png\", \"Table of NeurIPS review form fields with the handbook's instruction for each.\", \"neurips\", \"NeurIPS 2026 review form, with the handbook's instruction for each field.\", width=640))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l22_neurips_form.png\"><img src=\"images/l22_neurips_form.png\" alt=\"Table of NeurIPS review form fields with the handbook&#x27;s instruction for each.\" style=\"max-width:640px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-1\" aria-label=\"Reference 1: NeurIPS 2026 Reviewer Guidelines and Review Form\">[1]</a> NeurIPS 2026 review form, with the handbook&#x27;s instruction for each field.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "the_review_form()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 68,
+          "function_name": "the_review_form",
+          "code": "text(\"- The form separates the **summary**, the **strengths and weaknesses**, and the **scores**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The form separates the **summary**, the **strengths and weaknesses**, and the **scores**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "the_review_form()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 69,
+          "function_name": "the_review_form",
+          "code": "text(\"- The written reasons should agree with the score.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The written reasons should agree with the score.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "the_review_form()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 70,
+          "function_name": "the_review_form",
+          "code": "text(\"- Confidence describes how sure you are of your reading. It is separate from how much you like the topic.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Confidence describes how sure you are of your reading. It is separate from how much you like the topic.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "the_review_form()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 71,
+          "function_name": "the_review_form",
+          "code": "text(\"A complete form still needs specific comments. Now that we know what a good review looks like, we ask what happens when AI joins the process.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "A complete form still needs specific comments. Now that we know what a good review looks like, we ask what happens when AI joins the process.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 10,
+          "function_name": "main",
+          "code": "the_review_form()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 13,
+          "function_name": "main",
+          "code": "venue_rules_and_hidden_prompts()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 13,
+          "function_name": "main",
+          "code": "venue_rules_and_hidden_prompts()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 74,
+          "function_name": "venue_rules_and_hidden_prompts",
+          "code": "def venue_rules_and_hidden_prompts():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 13,
+          "function_name": "main",
+          "code": "venue_rules_and_hidden_prompts()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 75,
+          "function_name": "venue_rules_and_hidden_prompts",
+          "code": "text(\"## 05 · Venue Rules and Hidden Prompts\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 05 · Venue Rules and Hidden Prompts",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 13,
+          "function_name": "main",
+          "code": "venue_rules_and_hidden_prompts()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 76,
+          "function_name": "venue_rules_and_hidden_prompts",
+          "code": "text(\"Venues now set rules for AI in reviewing, and the rules differ. You read them for each venue and each year.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Venues now set rules for AI in reviewing, and the rules differ. You read them for each venue and each year.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 13,
+          "function_name": "main",
+          "code": "venue_rules_and_hidden_prompts()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 77,
+          "function_name": "venue_rules_and_hidden_prompts",
+          "code": "text(card(\"icml\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<article id=\"ref-2\" class=\"reference-card\"><img src=\"images/l22_icml_policy.png\" alt=\"\" loading=\"lazy\"><div><h3>[2] ICML 2026 Policy for LLM Use in Reviewing</h3><p class=\"reference-meta\">ICML · 2026</p><p>Two reviewer policies, with papers matched to compatible reviewers.</p><div class=\"reference-links\"><a href=\"https://icml.cc/Conferences/2026/LLM-Policy\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 13,
+          "function_name": "main",
+          "code": "venue_rules_and_hidden_prompts()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 78,
+          "function_name": "venue_rules_and_hidden_prompts",
+          "code": "text(\"- ICML 2026 offers two policies. Under the first, reviewers use no LLMs. Under the second, they may use LLMs to understand the paper and polish their writing.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- ICML 2026 offers two policies. Under the first, reviewers use no LLMs. Under the second, they may use LLMs to understand the paper and polish their writing.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 13,
+          "function_name": "main",
+          "code": "venue_rules_and_hidden_prompts()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 79,
+          "function_name": "venue_rules_and_hidden_prompts",
+          "code": "text(figure(\"images/l22_icml_policy.png\", \"ICML 2026 Policy A and Policy B.\", \"icml\", \"ICML 2026 Policy for LLM use in reviewing.\", width=620))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l22_icml_policy.png\"><img src=\"images/l22_icml_policy.png\" alt=\"ICML 2026 Policy A and Policy B.\" style=\"max-width:620px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-2\" aria-label=\"Reference 2: ICML 2026 Policy for LLM Use in Reviewing\">[2]</a> ICML 2026 Policy for LLM use in reviewing.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 13,
+          "function_name": "main",
+          "code": "venue_rules_and_hidden_prompts()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 80,
+          "function_name": "venue_rules_and_hidden_prompts",
+          "code": "text(\"- ICLR 2026 addresses a new attack. Some authors hide instructions in their paper, such as white text that asks for a positive review.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- ICLR 2026 addresses a new attack. Some authors hide instructions in their paper, such as white text that asks for a positive review.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 13,
+          "function_name": "main",
+          "code": "venue_rules_and_hidden_prompts()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 81,
+          "function_name": "venue_rules_and_hidden_prompts",
+          "code": "text(card(\"iclr\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<article id=\"ref-3\" class=\"reference-card\"><img src=\"images/l22_iclr_policy.png\" alt=\"\" loading=\"lazy\"><div><h3>[3] Policies on Large Language Model Usage at ICLR 2026</h3><p class=\"reference-meta\">ICLR · 2026</p><p>Treats hidden prompts in a submission as attempted collusion.</p><div class=\"reference-links\"><a href=\"https://iclr.cc/FAQ/LLM\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 13,
+          "function_name": "main",
+          "code": "venue_rules_and_hidden_prompts()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 82,
+          "function_name": "venue_rules_and_hidden_prompts",
+          "code": "text(\"- This work by *Lin* found **18 arXiv papers** with such hidden prompts in July 2025.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- This work by *Lin* found **18 arXiv papers** with such hidden prompts in July 2025.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 13,
+          "function_name": "main",
+          "code": "venue_rules_and_hidden_prompts()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 83,
+          "function_name": "venue_rules_and_hidden_prompts",
+          "code": "text(card(\"lin\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<article id=\"ref-4\" class=\"reference-card\"><img src=\"images/l22_title_lin.png\" alt=\"\" loading=\"lazy\"><div><h3>[4] Hidden Prompts in Manuscripts Exploit AI-Assisted Peer Review</h3><p class=\"reference-meta\">Zhicheng Lin · Communications of the ACM, 2026</p><p>Documents 18 arXiv manuscripts with hidden instructions aimed at AI reviewers.</p><div class=\"reference-links\"><a href=\"https://doi.org/10.1145/3779116\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 13,
+          "function_name": "main",
+          "code": "venue_rules_and_hidden_prompts()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 84,
+          "function_name": "venue_rules_and_hidden_prompts",
+          "code": "text(figure(\"images/l22_lin_tab1.png\", \"Table of hidden prompt types with the full prompt text.\", \"lin\", \"Lin, Table 1, the first three types of hidden prompt.\", width=620))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l22_lin_tab1.png\"><img src=\"images/l22_lin_tab1.png\" alt=\"Table of hidden prompt types with the full prompt text.\" style=\"max-width:620px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-4\" aria-label=\"Reference 4: Hidden Prompts in Manuscripts Exploit AI-Assisted Peer Review\">[4]</a> Lin, Table 1, the first three types of hidden prompt.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 13,
+          "function_name": "main",
+          "code": "venue_rules_and_hidden_prompts()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 85,
+          "function_name": "venue_rules_and_hidden_prompts",
+          "code": "text(\"This is the indirect prompt injection we studied in the last two lectures. **The paper is evidence to assess, and its text has no authority over the reviewer.** Next we ask whether AI reviewers can find real problems.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "This is the indirect prompt injection we studied in the last two lectures. **The paper is evidence to assess, and its text has no authority over the reviewer.** Next we ask whether AI reviewers can find real problems.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 14,
+          "function_name": "main",
+          "code": "spot()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 88,
+          "function_name": "spot",
+          "code": "def spot():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 14,
+          "function_name": "main",
+          "code": "spot()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 89,
+          "function_name": "spot",
+          "code": "text(\"## 06 · SPOT: Can AI Find Real Errors?\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 06 · SPOT: Can AI Find Real Errors?",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 14,
+          "function_name": "main",
+          "code": "spot()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 90,
+          "function_name": "spot",
+          "code": "text(\"A reviewer's main job is to find what is wrong. This work, *SPOT*, tests whether models can find **real errors in published papers**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "A reviewer's main job is to find what is wrong. This work, *SPOT*, tests whether models can find **real errors in published papers**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 14,
+          "function_name": "main",
+          "code": "spot()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 91,
+          "function_name": "spot",
+          "code": "text(card(\"spot\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<article id=\"ref-5\" class=\"reference-card\"><img src=\"images/l22_title_spot.png\" alt=\"\" loading=\"lazy\"><div><h3>[5] When AI Co-Scientists Fail: SPOT, a Benchmark for Automated Verification of Scientific Research</h3><p class=\"reference-meta\">Son, Hong, Fan, et al. · arXiv 2505.11855, 2025</p><p>Tests whether multimodal LLMs find confirmed errors in published papers.</p><div class=\"reference-links\"><a href=\"https://arxiv.org/abs/2505.11855\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 14,
+          "function_name": "main",
+          "code": "spot()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 92,
+          "function_name": "spot",
+          "code": "text(\"- The authors collect errors from withdrawn arXiv papers and from PubPeer, a site where readers discuss papers.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The authors collect errors from withdrawn arXiv papers and from PubPeer, a site where readers discuss papers.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 14,
+          "function_name": "main",
+          "code": "spot()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 93,
+          "function_name": "spot",
+          "code": "text(\"- They keep an error only when the original authors confirm it.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- They keep an error only when the original authors confirm it.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 14,
+          "function_name": "main",
+          "code": "spot()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 94,
+          "function_name": "spot",
+          "code": "text(\"- This gives **83 papers** with **91 errors**, such as duplicated figures and wrong equations.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- This gives **83 papers** with **91 errors**, such as duplicated figures and wrong equations.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 14,
+          "function_name": "main",
+          "code": "spot()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 95,
+          "function_name": "spot",
+          "code": "text(figure(\"images/l22_spot_fig1.png\", \"SPOT pipeline from seed collection and author validation to scoring model responses.\", \"spot\", \"SPOT, Figure 1. Green shows how the benchmark is built, and blue shows how answers are scored.\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l22_spot_fig1.png\"><img src=\"images/l22_spot_fig1.png\" alt=\"SPOT pipeline from seed collection and author validation to scoring model responses.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-5\" aria-label=\"Reference 5: When AI Co-Scientists Fail: SPOT, a Benchmark for Automated Verification of Scientific Research\">[5]</a> SPOT, Figure 1. Green shows how the benchmark is built, and blue shows how answers are scored.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 14,
+          "function_name": "main",
+          "code": "spot()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 96,
+          "function_name": "spot",
+          "code": "text(\"Each model reads the whole paper, with its text and images, and lists the errors it finds. Next we see how the answers are scored.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Each model reads the whole paper, with its text and images, and lists the errors it finds. Next we see how the answers are scored.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "spot_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 99,
+          "function_name": "spot_results",
+          "code": "def spot_results():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "spot_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 100,
+          "function_name": "spot_results",
+          "code": "text(\"## 07 · Precision, Recall, and the SPOT Results\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 07 · Precision, Recall, and the SPOT Results",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "spot_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 101,
+          "function_name": "spot_results",
+          "code": "text(\"We score an error finder with two numbers. **Precision** is the share of flagged issues that are real errors. **Recall** is the share of real errors that get flagged.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "We score an error finder with two numbers. **Precision** is the share of flagged issues that are real errors. **Recall** is the share of real errors that get flagged.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "spot_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 102,
+          "function_name": "spot_results",
+          "code": "text(\"Here is an example with **made up numbers**. Suppose a paper has 2 known errors. The model flags 10 issues, and 1 of them is a known error.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Here is an example with **made up numbers**. Suppose a paper has 2 known errors. The model flags 10 issues, and 1 of them is a known error.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "spot_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 103,
+          "function_name": "spot_results",
+          "code": "known_errors = 2"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "spot_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 104,
+          "function_name": "spot_results",
+          "code": "flagged = 10"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "spot_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 105,
+          "function_name": "spot_results",
+          "code": "matched = 1"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "spot_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 106,
+          "function_name": "spot_results",
+          "code": "precision = matched / flagged  # @inspect precision"
+        }
+      ],
+      "env": {
+        "precision": {
+          "type": "float",
+          "contents": 0.1,
+          "dtype": null,
+          "shape": null
+        }
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "spot_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 107,
+          "function_name": "spot_results",
+          "code": "recall = matched / known_errors  # @clear precision @inspect recall"
+        }
+      ],
+      "env": {
+        "recall": {
+          "type": "float",
+          "contents": 0.5,
+          "dtype": null,
+          "shape": null
+        },
+        "precision": null
+      },
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "spot_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 108,
+          "function_name": "spot_results",
+          "code": "text(f\"So precision is **{precision:.0%}** and recall is **{recall:.0%}**. Now let's read the real results.\")  # @clear recall"
+        }
+      ],
+      "env": {
+        "recall": null
+      },
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "So precision is **10%** and recall is **50%**. Now let's read the real results.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "spot_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 109,
+          "function_name": "spot_results",
+          "code": "text(figure(\"images/l22_spot_tab2.png\", \"Precision, recall, pass@1, and pass@4 for ten models.\", \"spot\", \"SPOT, Table 2. Each value is the mean over eight runs, with the standard deviation in small type.\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l22_spot_tab2.png\"><img src=\"images/l22_spot_tab2.png\" alt=\"Precision, recall, pass@1, and pass@4 for ten models.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-5\" aria-label=\"Reference 5: When AI Co-Scientists Fail: SPOT, a Benchmark for Automated Verification of Scientific Research\">[5]</a> SPOT, Table 2. Each value is the mean over eight runs, with the standard deviation in small type.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "spot_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 110,
+          "function_name": "spot_results",
+          "code": "text(\"- The best model, o3, finds **21.1%** of the errors, and only **6.1%** of its flags are correct.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The best model, o3, finds **21.1%** of the errors, and only **6.1%** of its flags are correct.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "spot_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 111,
+          "function_name": "spot_results",
+          "code": "text(\"- Across eight runs, the models rarely find the same error twice.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Across eight runs, the models rarely find the same error twice.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "spot_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 112,
+          "function_name": "spot_results",
+          "code": "text(\"- These models are from early 2025, and newer ones may do better.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- These models are from early 2025, and newer ones may do better.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 15,
+          "function_name": "main",
+          "code": "spot_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 113,
+          "function_name": "spot_results",
+          "code": "text(\"So AI can help a reviewer search, and **a person still checks every flag**. Next we test AI as a helper for human reviewers.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "So AI can help a reviewer search, and **a person still checks every flag**. Next we test AI as a helper for human reviewers.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "feedback_experiment()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 116,
+          "function_name": "feedback_experiment",
+          "code": "def feedback_experiment():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "feedback_experiment()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 117,
+          "function_name": "feedback_experiment",
+          "code": "text(\"## 08 · An Experiment with AI Feedback on Reviews\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 08 · An Experiment with AI Feedback on Reviews",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "feedback_experiment()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 118,
+          "function_name": "feedback_experiment",
+          "code": "text(\"AI can also give feedback **on a human review**. This work by *Thakkar et al.* tests this idea at ICLR 2025.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "AI can also give feedback **on a human review**. This work by *Thakkar et al.* tests this idea at ICLR 2025.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "feedback_experiment()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 119,
+          "function_name": "feedback_experiment",
+          "code": "text(card(\"thakkar\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<article id=\"ref-6\" class=\"reference-card\"><img src=\"images/l22_title_thakkar.png\" alt=\"\" loading=\"lazy\"><div><h3>[6] A Large-Scale Randomized Study of Large Language Model Feedback in Peer Review</h3><p class=\"reference-meta\">Thakkar, Yuksekgonul, Silberg, et al. · Nature Machine Intelligence, 2026</p><p>A randomized experiment with AI feedback on reviews at ICLR 2025.</p><div class=\"reference-links\"><a href=\"https://www.nature.com/articles/s42256-026-01188-x\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "feedback_experiment()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 120,
+          "function_name": "feedback_experiment",
+          "code": "text(\"- The papers were split at random into three equal groups. No reviews, half of the reviews, or all reviews received feedback.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The papers were split at random into three equal groups. No reviews, half of the reviews, or all reviews received feedback.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "feedback_experiment()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 121,
+          "function_name": "feedback_experiment",
+          "code": "text(\"- Feedback arrived about one hour after a review was submitted.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Feedback arrived about one hour after a review was submitted.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "feedback_experiment()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 122,
+          "function_name": "feedback_experiment",
+          "code": "text(figure(\"images/l22_thakkar_fig4a.png\", \"Three randomized groups and a timeline from October 15 to November 12.\", \"thakkar\", \"Thakkar et al., Figure 4a.\", width=460))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l22_thakkar_fig4a.png\"><img src=\"images/l22_thakkar_fig4a.png\" alt=\"Three randomized groups and a timeline from October 15 to November 12.\" style=\"max-width:460px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-6\" aria-label=\"Reference 6: A Large-Scale Randomized Study of Large Language Model Feedback in Peer Review\">[6]</a> Thakkar et al., Figure 4a.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "feedback_experiment()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 123,
+          "function_name": "feedback_experiment",
+          "code": "text(\"- The feedback asks reviewers to make vague comments specific, points to parts of the paper that may answer their questions, and flags unprofessional remarks.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The feedback asks reviewers to make vague comments specific, points to parts of the paper that may answer their questions, and flags unprofessional remarks.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "feedback_experiment()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 124,
+          "function_name": "feedback_experiment",
+          "code": "text(figure(\"images/l22_thakkar_fig4c.png\", \"Feedback agent with actors, aggregator, critic, formatter, and reliability tests.\", \"thakkar\", \"Thakkar et al., Figure 4c. A critic and reliability tests check the feedback before it is posted.\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l22_thakkar_fig4c.png\"><img src=\"images/l22_thakkar_fig4c.png\" alt=\"Feedback agent with actors, aggregator, critic, formatter, and reliability tests.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-6\" aria-label=\"Reference 6: A Large-Scale Randomized Study of Large Language Model Feedback in Peer Review\">[6]</a> Thakkar et al., Figure 4c. A critic and reliability tests check the feedback before it is posted.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 16,
+          "function_name": "main",
+          "code": "feedback_experiment()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 125,
+          "function_name": "feedback_experiment",
+          "code": "text(\"The feedback comments on the review and leaves every decision about the paper to people. Because the groups were assigned at random, we can study its effect. Next we look at what changed.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "The feedback comments on the review and leaves every decision about the paper to people. Because the groups were assigned at random, we can study its effect. Next we look at what changed.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 17,
+          "function_name": "main",
+          "code": "feedback_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 128,
+          "function_name": "feedback_results",
+          "code": "def feedback_results():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 17,
+          "function_name": "main",
+          "code": "feedback_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 129,
+          "function_name": "feedback_results",
+          "code": "text(\"## 09 · What Changed After Feedback\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 09 · What Changed After Feedback",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 17,
+          "function_name": "main",
+          "code": "feedback_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 130,
+          "function_name": "feedback_results",
+          "code": "text(\"Now we look at how reviewers responded.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Now we look at how reviewers responded.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 17,
+          "function_name": "main",
+          "code": "feedback_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 131,
+          "function_name": "feedback_results",
+          "code": "text(figure(\"images/l22_thakkar_fig1a.png\", \"Pie charts of control, feedback, and updated reviews.\", \"thakkar\", \"Thakkar et al., Figure 1a.\", width=300))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l22_thakkar_fig1a.png\"><img src=\"images/l22_thakkar_fig1a.png\" alt=\"Pie charts of control, feedback, and updated reviews.\" style=\"max-width:300px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-6\" aria-label=\"Reference 6: A Large-Scale Randomized Study of Large Language Model Feedback in Peer Review\">[6]</a> Thakkar et al., Figure 1a.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 17,
+          "function_name": "main",
+          "code": "feedback_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 132,
+          "function_name": "feedback_results",
+          "code": "text(\"- Among reviews that received feedback, **26.6%** were updated. In the control group, **9.4%** were updated.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Among reviews that received feedback, **26.6%** were updated. In the control group, **9.4%** were updated.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 17,
+          "function_name": "main",
+          "code": "feedback_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 133,
+          "function_name": "feedback_results",
+          "code": "text(\"- Receiving feedback differs from being assigned to a group. Some assigned reviews needed no feedback, so the authors compare the randomized groups.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Receiving feedback differs from being assigned to a group. Some assigned reviews needed no feedback, so the authors compare the randomized groups.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 17,
+          "function_name": "main",
+          "code": "feedback_results()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 134,
+          "function_name": "feedback_results",
+          "code": "text(\"This tells us that feedback changed what reviewers did. Whether the reviews got better needs a separate measure. Next we look at a conference that added an AI review to every paper.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "This tells us that feedback changed what reviewers did. Whether the reviews got better needs a separate measure. Next we look at a conference that added an AI review to every paper.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 18,
+          "function_name": "main",
+          "code": "aaai_pilot()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 137,
+          "function_name": "aaai_pilot",
+          "code": "def aaai_pilot():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 18,
+          "function_name": "main",
+          "code": "aaai_pilot()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 138,
+          "function_name": "aaai_pilot",
+          "code": "text(\"## 10 · The AAAI-26 AI Review Pilot\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 10 · The AAAI-26 AI Review Pilot",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 18,
+          "function_name": "main",
+          "code": "aaai_pilot()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 139,
+          "function_name": "aaai_pilot",
+          "code": "text(\"This work describes a much larger step. AAAI 2026 added **one AI review to every main track paper** in full review.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "This work describes a much larger step. AAAI 2026 added **one AI review to every main track paper** in full review.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 18,
+          "function_name": "main",
+          "code": "aaai_pilot()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 140,
+          "function_name": "aaai_pilot",
+          "code": "text(card(\"aaai\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<article id=\"ref-7\" class=\"reference-card\"><img src=\"images/l22_title_aaai.png\" alt=\"\" loading=\"lazy\"><div><h3>[7] AI-Assisted Peer Review at Scale: The AAAI-26 AI Review Pilot</h3><p class=\"reference-meta\">Biswas, Schoepp, Vasan, et al. · arXiv 2604.13940, 2026</p><p>One AI review for every main track paper at AAAI 2026, plus a planted error test.</p><div class=\"reference-links\"><a href=\"https://arxiv.org/abs/2604.13940\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 18,
+          "function_name": "main",
+          "code": "aaai_pilot()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 141,
+          "function_name": "aaai_pilot",
+          "code": "text(\"- The pilot produced AI reviews for 22,977 papers.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The pilot produced AI reviews for 22,977 papers.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 18,
+          "function_name": "main",
+          "code": "aaai_pilot()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 142,
+          "function_name": "aaai_pilot",
+          "code": "text(\"- Each AI review covers story, presentation, evaluations, correctness, and significance. The system then critiques and refines its own draft.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Each AI review covers story, presentation, evaluations, correctness, and significance. The system then critiques and refines its own draft.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 18,
+          "function_name": "main",
+          "code": "aaai_pilot()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 143,
+          "function_name": "aaai_pilot",
+          "code": "text(\"- The AI review gives **no score and no recommendation**. People make every decision.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The AI review gives **no score and no recommendation**. People make every decision.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 18,
+          "function_name": "main",
+          "code": "aaai_pilot()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 144,
+          "function_name": "aaai_pilot",
+          "code": "text(figure(\"images/l22_aaai_fig1a.png\", \"AAAI-26 AI review system next to the human review process.\", \"aaai\", \"AAAI-26 AI Review Pilot, Figure 1a.\", width=520))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l22_aaai_fig1a.png\"><img src=\"images/l22_aaai_fig1a.png\" alt=\"AAAI-26 AI review system next to the human review process.\" style=\"max-width:520px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-7\" aria-label=\"Reference 7: AI-Assisted Peer Review at Scale: The AAAI-26 AI Review Pilot\">[7]</a> AAAI-26 AI Review Pilot, Figure 1a.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 18,
+          "function_name": "main",
+          "code": "aaai_pilot()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 145,
+          "function_name": "aaai_pilot",
+          "code": "text(\"Running at this scale shows the workflow is practical. Accuracy needs its own test, so the authors built a controlled one. Next we look at it.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Running at this scale shows the workflow is practical. Accuracy needs its own test, so the authors built a controlled one. Next we look at it.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 19,
+          "function_name": "main",
+          "code": "planted_errors()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 148,
+          "function_name": "planted_errors",
+          "code": "def planted_errors():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 19,
+          "function_name": "main",
+          "code": "planted_errors()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 149,
+          "function_name": "planted_errors",
+          "code": "text(\"## 11 · SPECS: Testing with Planted Errors\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 11 · SPECS: Testing with Planted Errors",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 19,
+          "function_name": "main",
+          "code": "planted_errors()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 150,
+          "function_name": "planted_errors",
+          "code": "text(\"To measure accuracy, we need errors whose location we know. This test, called **SPECS**, plants them on purpose.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "To measure accuracy, we need errors whose location we know. This test, called **SPECS**, plants them on purpose.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 19,
+          "function_name": "main",
+          "code": "planted_errors()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 151,
+          "function_name": "planted_errors",
+          "code": "text(\"- The authors take accepted AAAI-25 papers and insert one error into each.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The authors take accepted AAAI-25 papers and insert one error into each.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 19,
+          "function_name": "main",
+          "code": "planted_errors()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 152,
+          "function_name": "planted_errors",
+          "code": "text(\"- The error falls into one of five areas, which give the test its name. They are story, presentation, evaluations, correctness, and significance.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The error falls into one of five areas, which give the test its name. They are story, presentation, evaluations, correctness, and significance.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 19,
+          "function_name": "main",
+          "code": "planted_errors()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 153,
+          "function_name": "planted_errors",
+          "code": "text(\"- A judge model checks whether a review mentions the planted error. The test uses 783 changed papers.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- A judge model checks whether a review mentions the planted error. The test uses 783 changed papers.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 19,
+          "function_name": "main",
+          "code": "planted_errors()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 154,
+          "function_name": "planted_errors",
+          "code": "text(figure(\"images/l22_aaai_fig4a.png\", \"SPECS pipeline from paper curation to perturbation and judging.\", \"aaai\", \"AAAI-26 AI Review Pilot, Figure 4a.\", width=480))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l22_aaai_fig4a.png\"><img src=\"images/l22_aaai_fig4a.png\" alt=\"SPECS pipeline from paper curation to perturbation and judging.\" style=\"max-width:480px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-7\" aria-label=\"Reference 7: AI-Assisted Peer Review at Scale: The AAAI-26 AI Review Pilot\">[7]</a> AAAI-26 AI Review Pilot, Figure 4a.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 19,
+          "function_name": "main",
+          "code": "planted_errors()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 155,
+          "function_name": "planted_errors",
+          "code": "text(figure(\"images/l22_aaai_tab2.png\", \"Recall per SPECS criterion for baseline, targeted, and final systems.\", \"aaai\", \"AAAI-26 AI Review Pilot, Table 2.\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l22_aaai_tab2.png\"><img src=\"images/l22_aaai_tab2.png\" alt=\"Recall per SPECS criterion for baseline, targeted, and final systems.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-7\" aria-label=\"Reference 7: AI-Assisted Peer Review at Scale: The AAAI-26 AI Review Pilot\">[7]</a> AAAI-26 AI Review Pilot, Table 2.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 19,
+          "function_name": "main",
+          "code": "planted_errors()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 156,
+          "function_name": "planted_errors",
+          "code": "text(\"- Mean recall rises from **0.43** for a baseline to **0.64** for the final system.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Mean recall rises from **0.43** for a baseline to **0.64** for the final system.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 19,
+          "function_name": "main",
+          "code": "planted_errors()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 157,
+          "function_name": "planted_errors",
+          "code": "text(\"- On significance, the targeted system beats the final one. A mean can hide such differences.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- On significance, the targeted system beats the final one. A mean can hide such differences.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 19,
+          "function_name": "main",
+          "code": "planted_errors()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 158,
+          "function_name": "planted_errors",
+          "code": "text(\"SPOT used real errors, while SPECS plants them. The systems and errors differ, so we do not compare the two numbers directly. Next we turn to the other side and answer reviews of our own paper.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "SPOT used real errors, while SPECS plants them. The systems and errors differ, so we do not compare the two numbers directly. Next we turn to the other side and answer reviews of our own paper.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 19,
+          "function_name": "main",
+          "code": "planted_errors()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "deciding_how_to_answer()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "deciding_how_to_answer()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 161,
+          "function_name": "deciding_how_to_answer",
+          "code": "def deciding_how_to_answer():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "deciding_how_to_answer()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 162,
+          "function_name": "deciding_how_to_answer",
+          "code": "text(\"## 12 · Deciding How to Answer\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 12 · Deciding How to Answer",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "deciding_how_to_answer()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 163,
+          "function_name": "deciding_how_to_answer",
+          "code": "text(\"Now imagine you receive the reviews of your own paper. Let's first sort the requests, because each kind needs a different answer.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Now imagine you receive the reviews of your own paper. Let's first sort the requests, because each kind needs a different answer.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "deciding_how_to_answer()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 164,
+          "function_name": "deciding_how_to_answer",
+          "code": "text(\"- If a reviewer finds a **real error**, you correct it.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- If a reviewer finds a **real error**, you correct it.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "deciding_how_to_answer()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 165,
+          "function_name": "deciding_how_to_answer",
+          "code": "text(\"- If a reviewer asks for **missing evidence**, you add an experiment when it tests a central claim.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- If a reviewer asks for **missing evidence**, you add an experiment when it tests a central claim.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "deciding_how_to_answer()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 166,
+          "function_name": "deciding_how_to_answer",
+          "code": "text(\"- If a request **changes the scope** of the paper, you explain the boundary and give a reason.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- If a request **changes the scope** of the paper, you explain the boundary and give a reason.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 22,
+          "function_name": "main",
+          "code": "deciding_how_to_answer()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 167,
+          "function_name": "deciding_how_to_answer",
+          "code": "text(\"Before you defend a claim, you check whether the reviewer is right. A misunderstanding can also show that your writing is unclear. Next we look at how to write each answer.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Before you defend a claim, you check whether the reviewer is right. A misunderstanding can also show that your writing is unclear. Next we look at how to write each answer.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "writing_each_answer()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 170,
+          "function_name": "writing_each_answer",
+          "code": "def writing_each_answer():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "writing_each_answer()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 171,
+          "function_name": "writing_each_answer",
+          "code": "text(\"## 13 · Writing Each Answer\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 13 · Writing Each Answer",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "writing_each_answer()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 172,
+          "function_name": "writing_each_answer",
+          "code": "text(\"Our course guide writes each answer in three steps. We call them **retrieve, argue, and generate**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Our course guide writes each answer in three steps. We call them **retrieve, argue, and generate**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "writing_each_answer()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 173,
+          "function_name": "writing_each_answer",
+          "code": "text(\"- First, you **retrieve** the evidence, such as a line, a table, or prior work.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- First, you **retrieve** the evidence, such as a line, a table, or prior work.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "writing_each_answer()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 174,
+          "function_name": "writing_each_answer",
+          "code": "text(\"- Then you **argue**. You answer the concern in one sentence and explain what the evidence supports.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Then you **argue**. You answer the concern in one sentence and explain what the evidence supports.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "writing_each_answer()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 175,
+          "function_name": "writing_each_answer",
+          "code": "text(\"- Finally, you **generate** the change. You state exactly what will change in the paper.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Finally, you **generate** the change. You state exactly what will change in the paper.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "writing_each_answer()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 176,
+          "function_name": "writing_each_answer",
+          "code": "text(\"Here is an example. A reviewer says that experimental details are missing.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Here is an example. A reviewer says that experimental details are missing.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "writing_each_answer()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 177,
+          "function_name": "writing_each_answer",
+          "code": "text(\"- The authors point to the baseline settings, which follow earlier work and appear in Appendix A.3.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The authors point to the baseline settings, which follow earlier work and appear in Appendix A.3.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "writing_each_answer()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 178,
+          "function_name": "writing_each_answer",
+          "code": "text(\"- They explain that nodes and labels become text, BERT gives the embeddings, and the data uses an 8:1:1 split.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- They explain that nodes and labels become text, BERT gives the embeddings, and the data uses an 8:1:1 split.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "writing_each_answer()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 179,
+          "function_name": "writing_each_answer",
+          "code": "text(\"- They promise to add these settings to the paper.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- They promise to add these settings to the paper.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "writing_each_answer()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 180,
+          "function_name": "writing_each_answer",
+          "code": "text(figure(\"images/l22_rebuttal_template.png\", \"A response block with Retrieve, Argue, Generate, and Status fields.\", None, \"Our course template for one reviewer concern.\", width=560))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l22_rebuttal_template.png\"><img src=\"images/l22_rebuttal_template.png\" alt=\"A response block with Retrieve, Argue, Generate, and Status fields.\" style=\"max-width:560px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\">Our course template for one reviewer concern.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "writing_each_answer()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 181,
+          "function_name": "writing_each_answer",
+          "code": "text(\"This structure also helps an agent assist you, because a person can check each source and each promised edit. Next we move from reviewing a paper to reproducing it.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "This structure also helps an agent assist you, because a person can check each source and each promised edit. Next we move from reviewing a paper to reproducing it.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 23,
+          "function_name": "main",
+          "code": "writing_each_answer()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "paperbench()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "paperbench()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 184,
+          "function_name": "paperbench",
+          "code": "def paperbench():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "paperbench()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 185,
+          "function_name": "paperbench",
+          "code": "text(\"## 14 · PaperBench: Reproducing a Paper\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 14 · PaperBench: Reproducing a Paper",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "paperbench()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 186,
+          "function_name": "paperbench",
+          "code": "text(\"Reading and reviewing check a claim on paper. Reproducing the experiment is a stronger check. This work, *PaperBench*, asks an agent to reproduce a paper **from scratch**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Reading and reviewing check a claim on paper. Reproducing the experiment is a stronger check. This work, *PaperBench*, asks an agent to reproduce a paper **from scratch**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "paperbench()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 187,
+          "function_name": "paperbench",
+          "code": "text(card(\"paperbench\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<article id=\"ref-8\" class=\"reference-card\"><img src=\"images/l22_title_paperbench.png\" alt=\"\" loading=\"lazy\"><div><h3>[8] PaperBench: Evaluating AI&#x27;s Ability to Replicate AI Research</h3><p class=\"reference-meta\">Starace, Jaffe, Sherburn, et al. · ICML 2025</p><p>Agents reproduce ICML papers from scratch and are graded with detailed rubrics.</p><div class=\"reference-links\"><a href=\"https://proceedings.mlr.press/v267/starace25a.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open source ↗</a></div></div></article>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "paperbench()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 188,
+          "function_name": "paperbench",
+          "code": "text(\"- The agent reads a paper and builds a code repository.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The agent reads a paper and builds a code repository.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "paperbench()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 189,
+          "function_name": "paperbench",
+          "code": "text(\"- A judge runs the code and grades it against a detailed rubric.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- A judge runs the code and grades it against a detailed rubric.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "paperbench()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 190,
+          "function_name": "paperbench",
+          "code": "text(\"- The benchmark has **20 ICML 2024 papers** and **8,316 grading criteria**, written with the original authors.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- The benchmark has **20 ICML 2024 papers** and **8,316 grading criteria**, written with the original authors.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "paperbench()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 191,
+          "function_name": "paperbench",
+          "code": "text(figure(\"images/l22_paperbench_fig1.png\", \"Agent, submission, reproduction, and rubric grading.\", \"paperbench\", \"PaperBench, Figure 1. The score inside the figure is only an example.\"))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l22_paperbench_fig1.png\"><img src=\"images/l22_paperbench_fig1.png\" alt=\"Agent, submission, reproduction, and rubric grading.\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-8\" aria-label=\"Reference 8: PaperBench: Evaluating AI&#x27;s Ability to Replicate AI Research\">[8]</a> PaperBench, Figure 1. The score inside the figure is only an example.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "paperbench()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 192,
+          "function_name": "paperbench",
+          "code": "text(\"- Each model ran three times per paper, with up to 12 hours per run. The best agent meets **21.0%** of the rubric.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- Each model ran three times per paper, with up to 12 hours per run. The best agent meets **21.0%** of the rubric.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "paperbench()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 193,
+          "function_name": "paperbench",
+          "code": "text(figure(\"images/l22_paperbench_tab3.png\", \"Average replication scores for six models.\", \"paperbench\", \"PaperBench, Table 3.\", width=420))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l22_paperbench_tab3.png\"><img src=\"images/l22_paperbench_tab3.png\" alt=\"Average replication scores for six models.\" style=\"max-width:420px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\"><a href=\"#ref-8\" aria-label=\"Reference 8: PaperBench: Evaluating AI&#x27;s Ability to Replicate AI Research\">[8]</a> PaperBench, Table 3.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 26,
+          "function_name": "main",
+          "code": "paperbench()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 194,
+          "function_name": "paperbench",
+          "code": "text(\"These models are from early 2025, and newer agents may score higher. The lesson stays the same. **We ask which part of a result was reproduced, and what evidence was saved.** Now let's look back at the whole course.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "These models are from early 2025, and newer agents may score higher. The lesson stays the same. **We ask which part of a result was reproduced, and what evidence was saved.** Now let's look back at the whole course.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "course_review()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 197,
+          "function_name": "course_review",
+          "code": "def course_review():"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "course_review()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 198,
+          "function_name": "course_review",
+          "code": "text(\"## 15 · Looking Back at the Course\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "## 15 · Looking Back at the Course",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "course_review()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 199,
+          "function_name": "course_review",
+          "code": "text(\"Let's put the whole course together.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Let's put the whole course together.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "course_review()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 200,
+          "function_name": "course_review",
+          "code": "text(figure(\"images/l22_course_schedule.png\", \"Weekly schedule of CSE 398/498 in Fall 2026.\", None, \"CSE 398/498 syllabus, Fall 2026.\", width=640))"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "<figure class=\"lesson-figure\"><div class=\"figure-strip\"><button type=\"button\" class=\"figure-thumb\" data-figure=\"images/l22_course_schedule.png\"><img src=\"images/l22_course_schedule.png\" alt=\"Weekly schedule of CSE 398/498 in Fall 2026.\" style=\"max-width:640px\"><span>Enlarge figure ↗</span></button></div><figcaption class=\"lesson-cite\">CSE 398/498 syllabus, Fall 2026.</figcaption></figure>",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "course_review()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 201,
+          "function_name": "course_review",
+          "code": "text(\"- In weeks 1 to 3, we learned that an agent is a model running in a loop with an environment.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- In weeks 1 to 3, we learned that an agent is a model running in a loop with an environment.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "course_review()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 202,
+          "function_name": "course_review",
+          "code": "text(\"- In weeks 4 and 5, we studied how agents **reason and plan**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- In weeks 4 and 5, we studied how agents **reason and plan**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "course_review()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 203,
+          "function_name": "course_review",
+          "code": "text(\"- In weeks 6 to 8, we gave agents **memory, retrieval, and tools**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- In weeks 6 to 8, we gave agents **memory, retrieval, and tools**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "course_review()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 204,
+          "function_name": "course_review",
+          "code": "text(\"- In weeks 9 and 10, we built **harnesses** and **coding agents**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- In weeks 9 and 10, we built **harnesses** and **coding agents**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "course_review()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 205,
+          "function_name": "course_review",
+          "code": "text(\"- In weeks 11 to 14, we studied **research agents**, **evaluation**, **security**, and today, **review**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "- In weeks 11 to 14, we studied **research agents**, **evaluation**, **security**, and today, **review**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "course_review()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 206,
+          "function_name": "course_review",
+          "code": "text(\"Your final project brings these pieces together. Final presentations and live demonstrations are on **Thursday, December 3**.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Your final project brings these pieces together. Final presentations and live demonstrations are on **Thursday, December 3**.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "course_review()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 207,
+          "function_name": "course_review",
+          "code": "text(\"One habit connects every lecture. **Keep the task, the evidence, the actions, and the evaluation connected, so another person can check how a result was reached.**\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "One habit connects every lecture. **Keep the task, the evidence, the actions, and the evaluation connected, so another person can check how a result was reached.**",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "course_review()"
+        },
+        {
+          "path": "lecture_22.py",
+          "line_number": 208,
+          "function_name": "course_review",
+          "code": "text(\"Whenever you read a result, ask our two questions. **What does it claim, and what evidence supports it?** Thank you for a great semester.\")"
+        }
+      ],
+      "env": {},
+      "renderings": [
+        {
+          "type": "markdown",
+          "data": "Whenever you read a result, ask our two questions. **What does it claim, and what evidence supports it?** Thank you for a great semester.",
+          "style": {},
+          "external_link": null,
+          "internal_link": null
+        }
+      ]
+    },
+    {
+      "stack": [
+        {
+          "path": "lecture_22.py",
+          "line_number": 27,
+          "function_name": "main",
+          "code": "course_review()"
+        }
+      ],
+      "env": {},
+      "renderings": []
+    }
+  ]
+}
