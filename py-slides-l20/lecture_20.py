@@ -4,31 +4,13 @@ from lecture_support import card, figure
 
 
 def main():
-    # Part 1. What LLM safety is, and how it fails
-    introduction()
-    what_is_llm_safety()
-    how_models_learn_to_refuse()
-    two_ways_to_fail()
-    why_safety_training_fails()
-
-    # Part 2. From chat models to agents
-    indirect_prompt_injection()
-    role_confusion()
-
-    # Part 3. Measuring attacks on agents
-    agentdojo()
-    agentharm()
-    wasp()
-    attempts_and_budget()
-
-    # Part 4. Defenses and stronger attackers
-    camel_design()
-    camel_results()
-    adaptive_attacks()
-    summary()
+    llm_safety_and_how_it_fails()  # Part 1. What LLM safety is, and how it fails
+    from_chat_models_to_agents()  # Part 2. From chat models to agents
+    measuring_attacks_on_agents()  # Part 3. Measuring attacks on agents
+    defenses_and_stronger_attackers()  # Part 4. Defenses and stronger attackers
 
 
-def introduction():
+def llm_safety_and_how_it_fails():
     text("## 01 · Agent Safety and Security")
     text("CSE 398/498 · Vibe Research for Scientific Discovery · Lichao Sun · Lehigh University")
     text("We have built agents and learned to evaluate them. Today we ask what happens **when someone wants the agent to do the wrong thing**.")
@@ -38,8 +20,6 @@ def introduction():
     text("- Finally we study **defenses** and how to test them.")
     text("Today we are going to study two questions. **What does the attacker control, and what did the experiment observe?**")
 
-
-def what_is_llm_safety():
     text("## 02 · What Is LLM Safety?")
     text("Before we study attacks, we need to know what we are protecting. This work, *TrustLLM*, groups trustworthiness into eight dimensions.")
     text(card("trustllm"))
@@ -48,8 +28,6 @@ def what_is_llm_safety():
     text(figure("images/w13_trustllm_fig2.png", "TrustLLM benchmark design with the eight dimensions along the bottom.", "trustllm", "TrustLLM, Figure 2. The eight dimensions are along the bottom."))
     text("Today we focus on safety. This work also finds that some models are so cautious that they **refuse harmless requests**. We will come back to this soon.")
 
-
-def how_models_learn_to_refuse():
     text("## 03 · How Models Learn to Refuse")
     text("Next we ask how a model learns to be safe. The standard method is **RLHF**, reinforcement learning from human feedback. This work, *InstructGPT*, is the best known example.")
     text(card("instructgpt"))
@@ -59,8 +37,6 @@ def how_models_learn_to_refuse():
     text(figure("images/w13_instructgpt_fig2.png", "The three steps of RLHF.", "instructgpt", "InstructGPT, Figure 2."))
     text("Labelers prefer answers that are helpful and harmless. So the model learns to refuse **from examples**. This works well most of the time, and it can also go wrong in two directions.")
 
-
-def two_ways_to_fail():
     text("## 04 · Two Ways to Fail")
     text("This figure from *TrustLLM* shows both directions.")
     text("- In the first direction, the model **refuses too little**. A harmful request is disguised, and the model answers it. We call this a **jailbreak**.")
@@ -70,8 +46,6 @@ def two_ways_to_fail():
     text(card("xstest"))
     text("So when we evaluate safety, we check both directions. We will see this again with agents. Next we look more closely at jailbreaks, since they can cause real harm.")
 
-
-def why_safety_training_fails():
     text("## 05 · Why Safety Training Fails")
     text("Why can a model trained to refuse still be jailbroken? This work, *Jailbroken*, gives two explanations.")
     text(card("jailbroken"))
@@ -81,7 +55,7 @@ def why_safety_training_fails():
     text("In both cases, the request comes from the user. From here on, the model becomes an agent that reads outside content and uses tools. **The instruction may then come from someone other than the user.**")
 
 
-def indirect_prompt_injection():
+def from_chat_models_to_agents():
     text("## 06 · Indirect Prompt Injection")
     text("An agent reads web pages, emails, and files for its user. This gives the attacker a new way in. This work by *Greshake et al.* calls it **indirect prompt injection**.")
     text(card("greshake"))
@@ -91,8 +65,6 @@ def indirect_prompt_injection():
     text(figure("images/w13_greshake_fig3.png", "Numbered attack path from planted data to a compromised model.", "greshake", "Greshake et al., Figure 3. Follow the numbers.", width=460))
     text("The same path runs through code repositories, tool descriptions, and skill files. Next we ask why the model follows this text.")
 
-
-def role_confusion():
     text("## 07 · Why the Model Follows: Role Confusion")
     text("Each message in a chat carries a role tag, such as user or tool. This work, *Prompt Injection as Role Confusion*, asks whether the model really relies on these tags.")
     text(card("roleconf"))
@@ -104,7 +76,7 @@ def role_confusion():
     text("The pink bars are much higher. So a role tag alone does little to protect the agent. Next we want to know how often injection succeeds in real agent tasks.")
 
 
-def agentdojo():
+def measuring_attacks_on_agents():
     text("## 08 · AgentDojo: Utility and Security")
     text("To measure this, we need agents with real tasks and tools. This work, *AgentDojo*, builds such an environment.")
     text(card("agentdojo"))
@@ -114,8 +86,6 @@ def agentdojo():
     text(figure("images/w13_agentdojo_fig1.png", "AgentDojo with attacker goal, environment, user task, and the two metrics.", "agentdojo", "AgentDojo, Figure 1."))
     text("We need both scores, just as we checked both directions earlier. An agent that refuses everything is secure and useless. We will use this benchmark again for defenses.")
 
-
-def agentharm():
     text("## 09 · AgentHarm: When the User Is the Attacker")
     text("In AgentDojo the user is honest. This work, *AgentHarm*, returns to the case where **the user is the attacker**, and the harmful task needs several tool calls.")
     text(card("agentharm"))
@@ -124,8 +94,6 @@ def agentharm():
     text(figure("images/w13_agentharm_fig3.png", "Harmful and benign task scores per model.", "agentharm", "AgentHarm, Figure 3 (top). Red bars show harmful tasks under three settings, and green bars show benign tasks."))
     text("We compare bars within one model. When red gets close to green, the jailbreak lets the agent use **its full skill for harm**. Next we move from tools to the open web.")
 
-
-def wasp():
     text("## 10 · WASP: Redirected Is Not Finished")
     text("On the web, anyone can write on a page. This work, *WASP*, tests web agents when an attacker controls part of a page.")
     text(card("wasp"))
@@ -135,8 +103,6 @@ def wasp():
     text("Many runs start toward the attacker's goal and then stall. Attacks **partly succeed** up to 86% of the time, and **fully succeed** at most 17%. So we report both numbers.")
     text("So far, every attack was tried a fixed number of times. Next we let the attacker keep trying.")
 
-
-def attempts_and_budget():
     text("## 11 · More Attempts, More Violations")
     text("A real attacker can keep trying until something works. This work ran a public red teaming competition to measure this.")
     text(card("competition"))
@@ -151,7 +117,7 @@ def attempts_and_budget():
     text("So every security number needs its **attack budget**. Now we turn to defenses.")
 
 
-def camel_design():
+def defenses_and_stronger_attackers():
     text("## 12 · CaMeL: Separate Planning from Reading")
     text("Training a model to ignore injected text helps, and attackers keep finding ways around it. This work, *CaMeL*, protects the agent through **system design**.")
     text(card("camel"))
@@ -166,8 +132,6 @@ def camel_design():
     allowed = may_send_email(from_email)  # @stepover @inspect allowed
     text("The same call is allowed when the recipient comes from the user, and blocked when it comes from an email. Next we check whether this works.")  # @clear allowed
 
-
-def camel_results():
     text("## 13 · CaMeL: Results on AgentDojo")
     text("The authors test CaMeL on *AgentDojo*. The right panel uses an uneven scale.")
     text(figure("images/w13_camel_fig9.png", "Utility under attack and number of successful attacks.", "camel", "CaMeL, Figure 9."))
@@ -175,8 +139,6 @@ def camel_results():
     text("- Successful attacks drop from over a hundred to a handful.")
     text("So CaMeL trades a little utility for a strong guarantee. These results use fixed attacks, though. Next we ask what happens when the attacker studies the defense first.")
 
-
-def adaptive_attacks():
     text("## 14 · The Attacker Moves Second")
     text("A real attacker can study a defense and adapt. This work, *The Attacker Moves Second*, tests 12 published defenses this way.")
     text(card("ams"))
@@ -185,8 +147,6 @@ def adaptive_attacks():
     text(figure("images/w13_ams_fig1.png", "Attack success rates on 12 defenses under original and adaptive attacks.", "ams", "The Attacker Moves Second, Figure 1. Hatched bars show the original evaluation, and orange bars show the adaptive attack."))
     text("Most defenses first reported success rates near zero. Adaptive attacks pass most of them **over 90%** of the time. So we judge a defense by **the strongest attack it has faced**.")
 
-
-def summary():
     text("## 15 · Summary")
     text("Let's put the pieces together.")
     text("- A model can **refuse too little** or **refuse too much**, so we measure both.")
