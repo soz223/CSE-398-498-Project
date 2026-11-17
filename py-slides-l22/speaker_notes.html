@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lecture 22 · Paper Reading, Peer Review, and Course Review · Speaker Notes</title>
+<style>
+:root {
+  --bg: #f7f6f2; --card: #ffffff; --ink: #1d1d1f; --muted: #66645e;
+  --line: #e3e0d8; --accent: #2f5d8a; --accent-soft: #e8eef5; --code: #f0eee8;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17181a; --card: #202124; --ink: #ececec; --muted: #a3a19b;
+    --line: #34353a; --accent: #8fb6de; --accent-soft: #23303d; --code: #2a2b2f;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17181a; --card: #202124; --ink: #ececec; --muted: #a3a19b;
+  --line: #34353a; --accent: #8fb6de; --accent-soft: #23303d; --code: #2a2b2f;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 17px/1.65 -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+        "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+}
+.wrap { max-width: 1180px; margin: 0 auto; padding: 32px 16px 80px; }
+.top { display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline; justify-content: space-between; }
+h1 { font-size: 1.75rem; line-height: 1.25; margin: 0 0 8px; }
+.back { color: var(--accent); text-decoration: none; font-weight: 600; white-space: nowrap; }
+.back:hover { text-decoration: underline; }
+.intro { color: var(--muted); margin: 0 0 24px; max-width: 70ch; }
+nav.toc {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 6px 16px; padding: 16px; margin-bottom: 28px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+}
+nav.toc a { color: var(--ink); text-decoration: none; font-size: .92rem; padding: 4px 6px; border-radius: 6px; }
+nav.toc a:hover { background: var(--accent-soft); }
+nav.toc a span { color: var(--accent); font-weight: 700; margin-right: 8px; font-variant-numeric: tabular-nums; }
+article {
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 22px 24px; margin-bottom: 18px; scroll-margin-top: 16px;
+}
+article header { display: flex; gap: 12px; align-items: baseline; }
+.num { color: var(--accent); font-weight: 800; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+h2 { font-size: 1.3rem; margin: 0; line-height: 1.3; }
+.meta { color: var(--muted); font-style: italic; margin: 4px 0 14px; font-size: .92rem; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 860px) { .cols { grid-template-columns: 1fr; gap: 8px; } }
+h3 { font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 0 0 4px; }
+.cols p { margin: 0; }
+.zh p { line-height: 1.8; }
+.src { margin: 16px 0 0; padding-top: 12px; border-top: 1px dashed var(--line); font-size: .88rem; color: var(--muted); }
+.src span { font-weight: 700; color: var(--ink); margin-right: 6px; }
+code { background: var(--code); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+.theme { position: fixed; right: 16px; bottom: 16px; border: 1px solid var(--line); background: var(--card);
+  color: var(--ink); border-radius: 999px; padding: 6px 12px; cursor: pointer; font: inherit; font-size: .85rem; }
+@media print { .theme, nav.toc, .back { display: none; } body { background: #fff; } article { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>Lecture 22 · Paper Reading, Peer Review, and Course Review · Speaker Notes</h1>
+    <a class="back" href="./">Open the slides &rarr;</a>
+  </div>
+  <p class="intro">Teacher-only script for <code>lecture_22.py</code>. Each section lists its source slides in the original deck, a short English script, a Chinese translation, and the sources. Keshav (2007), Widom (2006), and Liang et al. (NEJM AI 2024) were removed. SPOT (2025) and Lin (CACM 2026) are new.</p>
+  <nav class="toc"><a href="#s01"><span>01</span>Paper Reading, Peer Review, and Course Review</a><a href="#s02"><span>02</span>Reading a Paper for Its Claims</a><a href="#s03"><span>03</span>Writing a Useful Review Comment</a><a href="#s04"><span>04</span>The Review Form</a><a href="#s05"><span>05</span>Venue Rules and Hidden Prompts</a><a href="#s06"><span>06</span>SPOT: Can AI Find Real Errors?</a><a href="#s07"><span>07</span>Precision, Recall, and the SPOT Results</a><a href="#s08"><span>08</span>An Experiment with AI Feedback on Reviews</a><a href="#s09"><span>09</span>What Changed After Feedback</a><a href="#s10"><span>10</span>The AAAI-26 AI Review Pilot</a><a href="#s11"><span>11</span>SPECS: Testing with Planted Errors</a><a href="#s12"><span>12</span>Deciding How to Answer</a><a href="#s13"><span>13</span>Writing Each Answer</a><a href="#s14"><span>14</span>PaperBench: Reproducing a Paper</a><a href="#s15"><span>15</span>Looking Back at the Course</a></nav>
+  
+<article id="s01">
+  <header><span class="num">01</span><h2>Paper Reading, Peer Review, and Course Review</h2></header>
+  <p class="meta">Original slides 1 and 2.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>This is our last lecture. All semester we asked agents to produce research results. Today we ask how a person, or an agent, checks a research result. We read and review, look at new studies of AI in peer review, practice answering reviews, and look back at the course. Today we are going to study two questions. What does the paper claim, and what evidence supports it?</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>这是最后一节课。整个学期我们让智能体产出研究结果，今天问：人或智能体怎样检查一个研究结果？先讲阅读和审稿，再看 AI 参与同行评审的新研究，然后练习回复审稿意见，最后回顾整门课。今天研究两个问题：论文主张了什么？什么证据支持它？</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Course synthesis.</p>
+</article>
+<article id="s02">
+  <header><span class="num">02</span><h2>Reading a Paper for Its Claims</h2></header>
+  <p class="meta">Original slides 3 to 5, rewritten without the 2006 and 2007 guides.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>We read in layers. First the title, abstract, introduction, and figures, to find the main claim. Then the method and results, to see which evidence supports each claim. Only when needed, every detail. A good abstract answers four questions. What problem, why it matters, what the authors did, and what they found. If one is missing, look in the paper. Next we write a review.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>读论文分层次。先读标题、摘要、引言和图，找主要主张；再读方法和结果，看每个主张有什么证据；需要时才读所有细节。好摘要回答四个问题：研究什么、为什么重要、做了什么、发现了什么。缺了哪一个，就去正文找。接下来写审稿意见。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Course synthesis.</p>
+</article>
+<article id="s03">
+  <header><span class="num">03</span><h2>Writing a Useful Review Comment</h2></header>
+  <p class="meta">Original slides 6 to 8.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>A useful comment points to a claim, a method detail, or a result. "The experiments are insufficient" tells the authors nothing. "The experiments use only synthetic data, and a real dataset would test generalization" tells them what is missing and why. Ask only for changes that affect a central claim. Next, the review form.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>有用的意见会指向某个主张、方法细节或结果。“实验不够”没有信息量；“实验只用了合成数据，真实数据能检验泛化”说清了缺什么、为什么重要。只要求影响核心主张的修改。接下来看审稿表。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Course guide, Tips for Review and Rebuttal.</p>
+</article>
+<article id="s04">
+  <header><span class="num">04</span><h2>The Review Form</h2></header>
+  <p class="meta">Original slide 9.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>The NeurIPS 2026 form separates the summary, strengths and weaknesses, and scores. The written reasons should agree with the score. Confidence is how sure you are of your reading, separate from how much you like the topic. A complete form still needs specific comments. Next, what happens when AI joins.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>NeurIPS 2026 审稿表把概括、优缺点和分数分开。文字理由要和分数一致。信心指你对自己理解的把握，和你喜不喜欢这个题目无关。表格填满了，意见仍然要具体。接下来看 AI 加入后的情况。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> NeurIPS 2026 Reviewer Guidelines.</p>
+</article>
+<article id="s05">
+  <header><span class="num">05</span><h2>Venue Rules and Hidden Prompts</h2></header>
+  <p class="meta">Original slides 10 and 11, plus Lin (new).</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>Rules differ by venue and year. ICML 2026 offers two policies, one with no LLMs and one allowing LLMs for understanding and polishing. ICLR 2026 addresses hidden instructions in papers. Lin found 18 arXiv papers with such prompts in July 2025. This is indirect prompt injection again. The paper is evidence to assess, and its text has no authority over the reviewer. Next, can AI find real errors?</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>各会议、各年份规则不同。ICML 2026 提供两种政策：一种禁用 LLM，一种允许用 LLM 理解论文和润色。ICLR 2026 针对论文中的隐藏指令。Lin 在 2025 年 7 月发现 18 篇 arXiv 论文藏有这类提示词。这又是间接提示注入。论文是要评估的证据，里面的文字对审稿人没有指挥权。接下来问：AI 能找到真实错误吗？</p></section>
+  </div>
+  <p class="src"><span>Sources</span> ICML 2026 LLM policy. ICLR 2026 LLM policy. Lin, Communications of the ACM, 2026, Table 1.</p>
+</article>
+<article id="s06">
+  <header><span class="num">06</span><h2>SPOT: Can AI Find Real Errors?</h2></header>
+  <p class="meta">New, replaces Liang et al.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>SPOT collects errors from withdrawn arXiv papers and PubPeer, and keeps an error only when the original authors confirm it. That gives 83 papers with 91 errors, such as duplicated figures and wrong equations. Each model reads the whole paper with images and lists errors. Next, how answers are scored.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>SPOT 从撤稿的 arXiv 论文和 PubPeer 收集错误，只保留原作者确认过的。共 83 篇论文、91 个错误，比如重复的图和错误的公式。每个模型读完整篇论文（含图片）并列出错误。接下来看怎样评分。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Son et al., arXiv 2505.11855, 2025, Figure 1.</p>
+</article>
+<article id="s07">
+  <header><span class="num">07</span><h2>Precision, Recall, and the SPOT Results</h2></header>
+  <p class="meta">New.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>Precision is the share of flags that are real. Recall is the share of real errors that get flagged. With made up numbers, 1 match out of 10 flags and 2 known errors gives 10% precision and 50% recall. In SPOT, o3 finds 21.1% of errors, and only 6.1% of its flags are correct. Models rarely find the same error twice. These are early 2025 models. A person still checks every flag. Next, AI as a helper to human reviewers.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>精确率是标出的问题中真错误的比例，召回率是真错误中被标出的比例。用假设数字算：标了 10 个、命中 1 个、真实错误 2 个，精确率 10%，召回率 50%。在 SPOT 上，o3 找到 21.1% 的错误，标出的问题只有 6.1% 是对的。多次运行很少找到同一个错误。这些是 2025 年初的模型。每个标记仍需人来核查。接下来看 AI 辅助人类审稿。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> SPOT, Table 2. The calculation is a teaching example.</p>
+</article>
+<article id="s08">
+  <header><span class="num">08</span><h2>An Experiment with AI Feedback on Reviews</h2></header>
+  <p class="meta">Original slides 15 to 17.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>At ICLR 2025, papers were randomly split into three groups where no reviews, half, or all reviews got feedback, about an hour after submission. The feedback asks for specific comments, points to parts of the paper that may answer questions, and flags unprofessional remarks. It never decides about the paper. Random assignment lets us study its effect. Next, what changed.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>ICLR 2025 上，论文被随机分成三组：没有评审、一半评审、全部评审收到反馈，大约在提交后一小时送达。反馈要求意见具体，指出论文中可能已回答问题的部分，并标出不专业的措辞。它不对论文做任何决定。随机分组让我们能研究效果。接下来看变化。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Thakkar et al., Nature Machine Intelligence 2026, Figures 4a and 4c.</p>
+</article>
+<article id="s09">
+  <header><span class="num">09</span><h2>What Changed After Feedback</h2></header>
+  <p class="meta">Original slide 18.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>Of reviews that received feedback, 26.6% were updated, versus 9.4% in the control group. Receiving feedback differs from being assigned, since some reviews needed none, so the authors compare randomized groups. Feedback changed what reviewers did. Whether reviews got better needs a separate measure. Next, an AI review on every paper.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>收到反馈的评审中有 26.6% 被修改，对照组是 9.4%。收到反馈和被分到某组不是一回事，有些评审不需要反馈，所以作者按随机分组比较。反馈改变了审稿人的行为，评审是否变好需要另外测量。接下来看给每篇论文都加 AI 评审的会议。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Thakkar et al., Figure 1a.</p>
+</article>
+<article id="s10">
+  <header><span class="num">10</span><h2>The AAAI-26 AI Review Pilot</h2></header>
+  <p class="meta">Original slides 19 and 20.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>AAAI 2026 added one AI review to each of 22,977 main track papers. Each covers story, presentation, evaluations, correctness, and significance, then critiques and refines itself. It gives no score and no recommendation, and people make every decision. Scale shows the workflow is practical. Accuracy needs its own test. Next we look at it.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>AAAI 2026 给 22,977 篇主会论文各加了一份 AI 评审，覆盖叙事、呈现、评估、正确性和意义，再自我批评和修改。它不给分、不给建议，决定都由人做。规模说明流程可行，准确性需要另外测。接下来看这个测试。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Biswas et al., arXiv 2604.13940, 2026, Figure 1a.</p>
+</article>
+<article id="s11">
+  <header><span class="num">11</span><h2>SPECS: Testing with Planted Errors</h2></header>
+  <p class="meta">Original slides 21 and 22.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>SPECS inserts one error into each accepted AAAI-25 paper, in one of five areas. A judge model checks whether a review mentions it, over 783 changed papers. Mean recall rises from 0.43 to 0.64. On significance, the targeted system beats the final one, so a mean hides differences. SPOT uses real errors and SPECS plants them, so we do not compare the numbers directly. Next, answering reviews of our own paper.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>SPECS 在每篇已接收的 AAAI-25 论文里植入一个错误，属于五类之一。评判模型检查评审是否提到它，共 783 篇改动过的论文。平均召回率从 0.43 升到 0.64。在“意义”这一类上，定向系统比最终系统好，平均值会掩盖差别。SPOT 用真实错误，SPECS 用植入错误，两个数字不能直接比。接下来练习回复自己论文的审稿意见。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Biswas et al., Figure 4a and Table 2.</p>
+</article>
+<article id="s12">
+  <header><span class="num">12</span><h2>Deciding How to Answer</h2></header>
+  <p class="meta">Original slides 23 to 25.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>Sort the requests first. Correct a real error. Add an experiment for missing evidence when it tests a central claim. Explain the boundary when a request changes the scope. Check whether the reviewer is right before you defend, since a misunderstanding can reveal unclear writing. Next, how to write each answer.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>先给请求分类：真实错误就改正；缺证据且关系到核心主张，就补实验；改变论文范围的请求，就解释边界和理由。辩护之前先检查审稿人是否说得对，误解也可能说明原文没写清楚。接下来讲每条回复怎么写。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Course synthesis.</p>
+</article>
+<article id="s13">
+  <header><span class="num">13</span><h2>Writing Each Answer</h2></header>
+  <p class="meta">Original slides 26 to 28.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>Retrieve the evidence, argue in one sentence what it supports, and generate the exact change. In the example, the authors point to Appendix A.3, explain that nodes and labels become text, BERT gives embeddings, and the split is 8:1:1, then promise to add these settings. A person can check each source and each promised edit. Next, reproducing a paper.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>找证据，用一句话论证它支持什么，再写出具体修改。例子中，作者指向附录 A.3，解释节点和标签转成文本、BERT 生成嵌入、数据按 8:1:1 划分，并承诺把这些设置加进论文。人可以逐条核查来源和承诺的修改。接下来讲复现论文。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Course guide, Tips for Review and Rebuttal. Course rebuttal template.</p>
+</article>
+<article id="s14">
+  <header><span class="num">14</span><h2>PaperBench: Reproducing a Paper</h2></header>
+  <p class="meta">Original slides 36 to 38.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>Reproducing is a stronger check than reading. PaperBench asks an agent to reproduce 20 ICML 2024 papers from scratch, graded on 8,316 criteria written with the authors. With three runs per paper and up to 12 hours each, the best agent meets 21.0% of the rubric. These are early 2025 models. We ask which part was reproduced and what evidence was saved. Now let's look back at the course.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>复现比阅读更严格。PaperBench 让智能体从零复现 20 篇 ICML 2024 论文，用和原作者一起写的 8,316 条标准评分。每篇跑三次、每次最多 12 小时，最好的智能体达到评分标准的 21.0%。这些是 2025 年初的模型。要问清复现了哪一部分、保存了哪些证据。下面回顾整门课。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Starace et al., ICML 2025, Figure 1 and Table 3.</p>
+</article>
+<article id="s15">
+  <header><span class="num">15</span><h2>Looking Back at the Course</h2></header>
+  <p class="meta">Original slides 29 to 35, 39, and 40.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>Weeks 1 to 3 covered the agent as a model in a loop with an environment. Weeks 4 and 5 covered reasoning and planning, weeks 6 to 8 memory, retrieval, and tools, weeks 9 and 10 harnesses and coding agents, and weeks 11 to 14 research agents, evaluation, security, and review. Final presentations are on Thursday, December 3. Keep the task, evidence, actions, and evaluation connected, and keep asking our two questions. Thank you.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>第 1 到 3 周：智能体是模型、循环和环境。第 4、5 周：推理与规划。第 6 到 8 周：记忆、检索和工具。第 9、10 周：运行框架和编程智能体。第 11 到 14 周：科研智能体、评估、安全和审稿。期末展示在 12 月 3 日星期四。让任务、证据、动作和评估保持连接，并继续问这两个问题。谢谢大家。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> CSE 398/498 syllabus, Fall 2026.</p>
+</article>
+</div>
+<button class="theme" type="button" onclick="toggleTheme()">Light / Dark</button>
+<script>
+function toggleTheme() {
+  const r = document.documentElement;
+  const dark = r.dataset.theme ? r.dataset.theme === "dark"
+    : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("notes-theme", r.dataset.theme); } catch (e) {}
+}
+try { const t = localStorage.getItem("notes-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+</body>
+</html>

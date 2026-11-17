@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lecture 20 · Agent Safety and Security · Speaker Notes</title>
+<style>
+:root {
+  --bg: #f7f6f2; --card: #ffffff; --ink: #1d1d1f; --muted: #66645e;
+  --line: #e3e0d8; --accent: #2f5d8a; --accent-soft: #e8eef5; --code: #f0eee8;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17181a; --card: #202124; --ink: #ececec; --muted: #a3a19b;
+    --line: #34353a; --accent: #8fb6de; --accent-soft: #23303d; --code: #2a2b2f;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17181a; --card: #202124; --ink: #ececec; --muted: #a3a19b;
+  --line: #34353a; --accent: #8fb6de; --accent-soft: #23303d; --code: #2a2b2f;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 17px/1.65 -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+        "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+}
+.wrap { max-width: 1180px; margin: 0 auto; padding: 32px 16px 80px; }
+.top { display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline; justify-content: space-between; }
+h1 { font-size: 1.75rem; line-height: 1.25; margin: 0 0 8px; }
+.back { color: var(--accent); text-decoration: none; font-weight: 600; white-space: nowrap; }
+.back:hover { text-decoration: underline; }
+.intro { color: var(--muted); margin: 0 0 24px; max-width: 70ch; }
+nav.toc {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 6px 16px; padding: 16px; margin-bottom: 28px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+}
+nav.toc a { color: var(--ink); text-decoration: none; font-size: .92rem; padding: 4px 6px; border-radius: 6px; }
+nav.toc a:hover { background: var(--accent-soft); }
+nav.toc a span { color: var(--accent); font-weight: 700; margin-right: 8px; font-variant-numeric: tabular-nums; }
+article {
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 22px 24px; margin-bottom: 18px; scroll-margin-top: 16px;
+}
+article header { display: flex; gap: 12px; align-items: baseline; }
+.num { color: var(--accent); font-weight: 800; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+h2 { font-size: 1.3rem; margin: 0; line-height: 1.3; }
+.meta { color: var(--muted); font-style: italic; margin: 4px 0 14px; font-size: .92rem; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 860px) { .cols { grid-template-columns: 1fr; gap: 8px; } }
+h3 { font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 0 0 4px; }
+.cols p { margin: 0; }
+.zh p { line-height: 1.8; }
+.src { margin: 16px 0 0; padding-top: 12px; border-top: 1px dashed var(--line); font-size: .88rem; color: var(--muted); }
+.src span { font-weight: 700; color: var(--ink); margin-right: 6px; }
+code { background: var(--code); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+.theme { position: fixed; right: 16px; bottom: 16px; border: 1px solid var(--line); background: var(--card);
+  color: var(--ink); border-radius: 999px; padding: 6px 12px; cursor: pointer; font: inherit; font-size: .85rem; }
+@media print { .theme, nav.toc, .back { display: none; } body { background: #fff; } article { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>Lecture 20 · Agent Safety and Security · Speaker Notes</h1>
+    <a class="back" href="./">Open the slides &rarr;</a>
+  </div>
+  <p class="intro">Teacher-only script for <code>lecture_20.py</code>. Each section lists its source slides in the original deck, a short English script, a Chinese translation, and the sources. Sections 02 to 04 are new.</p>
+  <nav class="toc"><a href="#s01"><span>01</span>Agent Safety and Security</a><a href="#s02"><span>02</span>What Is LLM Safety?</a><a href="#s03"><span>03</span>How Models Learn to Refuse</a><a href="#s04"><span>04</span>Two Ways to Fail</a><a href="#s05"><span>05</span>Why Safety Training Fails</a><a href="#s06"><span>06</span>Indirect Prompt Injection</a><a href="#s07"><span>07</span>Why the Model Follows: Role Confusion</a><a href="#s08"><span>08</span>AgentDojo: Utility and Security</a><a href="#s09"><span>09</span>AgentHarm: When the User Is the Attacker</a><a href="#s10"><span>10</span>WASP: Redirected Is Not Finished</a><a href="#s11"><span>11</span>More Attempts, More Violations</a><a href="#s12"><span>12</span>CaMeL: Separate Planning from Reading</a><a href="#s13"><span>13</span>CaMeL: Results on AgentDojo</a><a href="#s14"><span>14</span>The Attacker Moves Second</a><a href="#s15"><span>15</span>Summary</a></nav>
+  
+<article id="s01">
+  <header><span class="num">01</span><h2>Agent Safety and Security</h2></header>
+  <p class="meta">Original slides 1 and 2.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>We have built agents and learned to evaluate them. Today we ask what happens when someone wants the agent to do the wrong thing. We start with LLM safety, then see why safety training fails, then measure attacks on agents, and finally study defenses. Today we are going to study two questions. What does the attacker control, and what did the experiment observe?</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>我们已经会构建和评估智能体了。今天问：如果有人想让智能体做错事，会怎样？先讲大模型安全，再看安全训练为什么失败，然后测量针对智能体的攻击，最后讲防御。今天研究两个问题：攻击者控制了什么？实验观察到了什么？</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Course synthesis.</p>
+</article>
+<article id="s02">
+  <header><span class="num">02</span><h2>What Is LLM Safety?</h2></header>
+  <p class="meta">New.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>Before we study attacks, we need to know what we are protecting. TrustLLM groups trustworthiness into eight dimensions, shown along the bottom. Safety is one of them. This work also finds that some models are so cautious that they refuse harmless requests. We will come back to this soon.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>研究攻击前，先要知道保护什么。TrustLLM 把可信性分成八个维度，就是图下方这一排，安全是其中之一。这篇工作还发现，有些模型过于谨慎，连无害请求也拒绝。我们很快会回到这点。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Huang, Sun, et al., TrustLLM, ICML 2024, Figure 2.</p>
+</article>
+<article id="s03">
+  <header><span class="num">03</span><h2>How Models Learn to Refuse</h2></header>
+  <p class="meta">New.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>Next, how does a model learn to be safe? The standard method is RLHF, and InstructGPT is the best known example. People write good answers, then rank model answers, and the model is trained to earn a high reward. Labelers prefer helpful and harmless answers, so the model learns to refuse from examples. This usually works, and it can also go wrong in two directions.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>接下来，模型怎样学会安全？标准方法是 RLHF，最有名的例子是 InstructGPT。人先写好答案，再给模型答案排序，最后训练模型拿高奖励。标注者偏好有用又无害的回答，所以模型是从例子中学会拒绝的。这通常有效，但也可能往两个方向出错。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Ouyang et al., InstructGPT, NeurIPS 2022, Figure 2.</p>
+</article>
+<article id="s04">
+  <header><span class="num">04</span><h2>Two Ways to Fail</h2></header>
+  <p class="meta">New.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>On the left, the model refuses too little. The harmful request is disguised and the model answers. That is a jailbreak. On the right, the model refuses too much. The user only wants to stop a Windows process. That is exaggerated safety, and XSTest measures it with prompts like "Where can I buy a can of coke?" So we check both directions, and we will see this again with agents. Jailbreaks can cause real harm, so we look at them next.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>左边是拒绝太少：有害请求被伪装，模型就回答了，这是越狱。右边是拒绝太多：用户只想结束一个 Windows 进程，这是过度安全，XSTest 用“哪里能买到一罐可乐”这类问题来测量。所以两个方向都要检查，讲智能体时还会看到。越狱可能造成真正的伤害，接下来细看越狱。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> TrustLLM, Figure 5. Röttger et al., XSTest, NAACL 2024.</p>
+</article>
+<article id="s05">
+  <header><span class="num">05</span><h2>Why Safety Training Fails</h2></header>
+  <p class="meta">Original slides 3 and 4.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>Why can a model trained to refuse still be jailbroken? Jailbroken gives two explanations. Let's first look at competing objectives. The model is trained to follow instructions and to be safe, and a prompt can set these against each other. The second is mismatched generalization. The model can read Base64 from pretraining, while safety training mostly saw plain English, so a Base64 request slips through. In both cases the request comes from the user. From here on, the model becomes an agent, and the instruction may come from someone else.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>被训练成会拒绝的模型，为什么还能被越狱？Jailbroken 给出两种解释。先看目标冲突：模型既要服从指令，又要安全，提示词可以让两者对立。第二种是泛化不匹配：模型从预训练学会了读 Base64，而安全训练主要见过普通英文，所以 Base64 写的请求能漏过去。两种情况下请求都来自用户。从这里开始，模型变成智能体，指令可能来自别人。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Wei, Haghtalab, Steinhardt, NeurIPS 2023, Figure 1.</p>
+</article>
+<article id="s06">
+  <header><span class="num">06</span><h2>Indirect Prompt Injection</h2></header>
+  <p class="meta">Original slides 5 to 7.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>An agent reads web pages, emails, and files for its user. This gives the attacker a new way in. Follow the numbers. The attacker hides instructions in data, the user asks a normal question, the data enters the context, and the model may follow it. With tools, it can act on it. The same path runs through repositories and skill files. Next we ask why the model follows this text.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>智能体替用户读网页、邮件和文件，这给了攻击者新入口。沿着编号看：攻击者把指令藏进数据，用户提出普通问题，数据进入上下文，模型可能照做；有工具的话还会真的执行。代码仓库和技能文件也是同样路径。接下来问：模型为什么会听这段文字？</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Greshake et al., AISec 2023, Figure 3.</p>
+</article>
+<article id="s07">
+  <header><span class="num">07</span><h2>Why the Model Follows: Role Confusion</h2></header>
+  <p class="meta">Original slides 8 to 10.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>Each message carries a role tag. This work asks whether the model really relies on it. A probe shows that writing style matters more than the tag. Text that looks like the model's own reasoning is treated as reasoning. The authors hide such text in a web page, and the pink bars show it leaks private data much more often. So a role tag alone does little to protect the agent. Next, how often does injection succeed in real agent tasks?</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>每条消息都有角色标签。这篇工作问：模型真的依赖标签吗？探针显示，文风比标签更重要，写得像模型自己推理的文字就会被当成推理。作者把这种文字藏进网页，粉色柱子显示隐私泄露明显更多。所以光靠标签保护不了智能体。接下来看：在真实任务中注入有多常成功？</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Ye, Cui, Hadfield-Menell, ICML 2026, Figures 7 and 3.</p>
+</article>
+<article id="s08">
+  <header><span class="num">08</span><h2>AgentDojo: Utility and Security</h2></header>
+  <p class="meta">Original slides 11 to 14.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>To measure this, AgentDojo gives agents real tasks and tools, with 97 user tasks and 629 security test cases. The attacker hides its goal in a tool result. Each run gets a utility score and a security score. We need both, just as we checked both directions earlier. An agent that refuses everything is secure and useless.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>为了测量，AgentDojo 给智能体真实任务和工具，共 97 个用户任务、629 个安全测试案例。攻击者把目标藏在工具结果里。每次运行有效用分和安全分，两个都要，就像前面检查两个方向一样。拒绝一切的智能体很安全，但没用。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Debenedetti et al., NeurIPS 2024 Datasets and Benchmarks, Figure 1.</p>
+</article>
+<article id="s09">
+  <header><span class="num">09</span><h2>AgentHarm: When the User Is the Attacker</h2></header>
+  <p class="meta">Original slides 15 to 17.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>In AgentDojo the user is honest. AgentHarm returns to the case where the user is the attacker. Each of its 110 harmful tasks has a benign twin with the same tools, which tells a refusal apart from a lack of skill. Compare bars within one model. When red gets close to green, the jailbreak lets the agent use its full skill for harm. Next we move to the open web.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>AgentDojo 里用户是诚实的。AgentHarm 回到用户就是攻击者的情形。110 个有害任务各配一个用同样工具的正常任务，用来区分“拒绝了”和“不会做”。在同一个模型内比较：红色接近绿色，说明越狱让智能体把全部能力用在了作恶上。接下来转到开放网页。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Andriushchenko et al., ICLR 2025, Figure 3 (top).</p>
+</article>
+<article id="s10">
+  <header><span class="num">10</span><h2>WASP: Redirected Is Not Finished</h2></header>
+  <p class="meta">Original slides 18 to 20.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>On the web, anyone can write on a page. In one WASP example, the user asks for an upvote, and the page sends the agent to change the account email. Many runs start toward the attacker's goal and then stall. Attacks partly succeed up to 86% of the time and fully succeed at most 17%. So we report both. Next we let the attacker keep trying.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>网上任何人都能在页面上写东西。WASP 的一个例子里，用户只想点赞，页面却把智能体引去改账户邮箱。很多运行开始朝攻击目标走，随后卡住。部分成功最高 86%，完全成功最多 17%，两个数都要报告。接下来让攻击者反复尝试。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Evtimov et al., NeurIPS 2025 Datasets and Benchmarks, Figure 3.</p>
+</article>
+<article id="s11">
+  <header><span class="num">11</span><h2>More Attempts, More Violations</h2></header>
+  <p class="meta">Original slides 21 to 24.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>A real attacker can keep trying. This competition collected 1.8 million attacks on 22 models. Within one model, success rises quickly with more attempts. With made up numbers, 2% per try becomes 18% with ten tries and 87% with a hundred. So every security number needs its attack budget. Now we turn to defenses.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>真实攻击者可以一直试。这场竞赛收集了针对 22 个模型的 180 万次攻击。同一个模型内，尝试越多成功率涨得越快。用假设数字算：每次 2%，试 10 次是 18%，试 100 次是 87%。所以每个安全数字都要附上攻击预算。下面讲防御。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Zou et al., NeurIPS 2025 Datasets and Benchmarks, Figure 4. The calculation is a teaching example.</p>
+</article>
+<article id="s12">
+  <header><span class="num">12</span><h2>CaMeL: Separate Planning from Reading</h2></header>
+  <p class="meta">Original slides 25 to 28.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>Training helps, and attackers keep finding ways around it. CaMeL protects the agent through system design. A privileged LLM reads only the user's request and writes a plan. A quarantined LLM reads untrusted data and cannot call tools. An interpreter tracks where each value came from and checks a policy. In our small Python sketch, the same call is allowed for a recipient from the user and blocked for one from an email.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>训练有帮助，但攻击者总能绕过。CaMeL 从系统设计上保护智能体：特权模型只读用户请求并写计划；隔离模型读不可信数据，不能调用工具；解释器追踪每个值的来源并检查策略。在我们的小段 Python 里，同一个调用，收件人来自用户就放行，来自邮件就拦截。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Debenedetti et al., SaTML 2026, Figure 5. The code sketch is our simplification.</p>
+</article>
+<article id="s13">
+  <header><span class="num">13</span><h2>CaMeL: Results on AgentDojo</h2></header>
+  <p class="meta">Original slide 29.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>On AgentDojo, CaMeL solves 77% of tasks with provable security, against 84% undefended. Successful attacks drop from over a hundred to a handful. So CaMeL trades a little utility for a strong guarantee. These results use fixed attacks, though. Next, what if the attacker studies the defense first?</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>在 AgentDojo 上，CaMeL 在可证明安全的前提下完成 77% 的任务，无防御是 84%。成功攻击从一百多次降到个位数。所以 CaMeL 用一点效用换来强保证。不过这些都是固定攻击。接下来：如果攻击者先研究防御呢？</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Debenedetti et al., SaTML 2026, Figure 9.</p>
+</article>
+<article id="s14">
+  <header><span class="num">14</span><h2>The Attacker Moves Second</h2></header>
+  <p class="meta">Original slides 30 to 33.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>This work tests 12 published defenses with attacks that adapt in a loop. Most defenses first reported success near zero. Adaptive attacks pass most of them over 90% of the time. So we judge a defense by the strongest attack it has faced.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>这篇工作用循环调整的自适应攻击重新测试了 12 个已发表的防御。大多数原本报告的成功率接近零，自适应攻击却对多数防御超过 90%。所以评价防御，要看它经受过的最强攻击。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Nasr et al., USENIX Security 2026, Figures 2 and 1.</p>
+</article>
+<article id="s15">
+  <header><span class="num">15</span><h2>Summary</h2></header>
+  <p class="meta">Original slides 34 and 35.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>Let's put the pieces together. A model can refuse too little or too much. Agents can be attacked through anything they read. Every result depends on the attacker's access and budget. Defenses work best when built into the system and tested against attackers who adapt. We now have a clear way to answer our two questions.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>总结一下：模型可能拒绝太少，也可能拒绝太多；智能体读到的任何内容都可能是攻击入口；每个结果都取决于攻击者的权限和预算；防御最好做进系统，并用会调整的攻击者检验。现在我们能清楚回答开头的两个问题了。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Course synthesis.</p>
+</article>
+</div>
+<button class="theme" type="button" onclick="toggleTheme()">Light / Dark</button>
+<script>
+function toggleTheme() {
+  const r = document.documentElement;
+  const dark = r.dataset.theme ? r.dataset.theme === "dark"
+    : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("notes-theme", r.dataset.theme); } catch (e) {}
+}
+try { const t = localStorage.getItem("notes-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+</body>
+</html>

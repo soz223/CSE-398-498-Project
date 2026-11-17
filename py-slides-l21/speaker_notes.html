@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lecture 21 · The Agent Attack Surface · Speaker Notes</title>
+<style>
+:root {
+  --bg: #f7f6f2; --card: #ffffff; --ink: #1d1d1f; --muted: #66645e;
+  --line: #e3e0d8; --accent: #2f5d8a; --accent-soft: #e8eef5; --code: #f0eee8;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17181a; --card: #202124; --ink: #ececec; --muted: #a3a19b;
+    --line: #34353a; --accent: #8fb6de; --accent-soft: #23303d; --code: #2a2b2f;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17181a; --card: #202124; --ink: #ececec; --muted: #a3a19b;
+  --line: #34353a; --accent: #8fb6de; --accent-soft: #23303d; --code: #2a2b2f;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 17px/1.65 -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+        "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+}
+.wrap { max-width: 1180px; margin: 0 auto; padding: 32px 16px 80px; }
+.top { display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline; justify-content: space-between; }
+h1 { font-size: 1.75rem; line-height: 1.25; margin: 0 0 8px; }
+.back { color: var(--accent); text-decoration: none; font-weight: 600; white-space: nowrap; }
+.back:hover { text-decoration: underline; }
+.intro { color: var(--muted); margin: 0 0 24px; max-width: 70ch; }
+nav.toc {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 6px 16px; padding: 16px; margin-bottom: 28px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+}
+nav.toc a { color: var(--ink); text-decoration: none; font-size: .92rem; padding: 4px 6px; border-radius: 6px; }
+nav.toc a:hover { background: var(--accent-soft); }
+nav.toc a span { color: var(--accent); font-weight: 700; margin-right: 8px; font-variant-numeric: tabular-nums; }
+article {
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 22px 24px; margin-bottom: 18px; scroll-margin-top: 16px;
+}
+article header { display: flex; gap: 12px; align-items: baseline; }
+.num { color: var(--accent); font-weight: 800; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+h2 { font-size: 1.3rem; margin: 0; line-height: 1.3; }
+.meta { color: var(--muted); font-style: italic; margin: 4px 0 14px; font-size: .92rem; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 860px) { .cols { grid-template-columns: 1fr; gap: 8px; } }
+h3 { font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 0 0 4px; }
+.cols p { margin: 0; }
+.zh p { line-height: 1.8; }
+.src { margin: 16px 0 0; padding-top: 12px; border-top: 1px dashed var(--line); font-size: .88rem; color: var(--muted); }
+.src span { font-weight: 700; color: var(--ink); margin-right: 6px; }
+code { background: var(--code); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+.theme { position: fixed; right: 16px; bottom: 16px; border: 1px solid var(--line); background: var(--card);
+  color: var(--ink); border-radius: 999px; padding: 6px 12px; cursor: pointer; font: inherit; font-size: .85rem; }
+@media print { .theme, nav.toc, .back { display: none; } body { background: #fff; } article { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>Lecture 21 · The Agent Attack Surface · Speaker Notes</h1>
+    <a class="back" href="./">Open the slides &rarr;</a>
+  </div>
+  <p class="intro">Teacher-only script for <code>lecture_21.py</code>. Each section lists its source slides in the original deck, a short English script, a Chinese translation, and the sources.</p>
+  <nav class="toc"><a href="#s01"><span>01</span>The Agent Attack Surface</a><a href="#s02"><span>02</span>How an Agent Reaches Its Tools</a><a href="#s03"><span>03</span>Tool Poisoning</a><a href="#s04"><span>04</span>Rug Pulls and Shadowing</a><a href="#s05"><span>05</span>How Real Clients Respond</a><a href="#s06"><span>06</span>MCPTox</a><a href="#s07"><span>07</span>Which Attacks Work Best</a><a href="#s08"><span>08</span>AgentVigil</a><a href="#s09"><span>09</span>What the Protocol Requires</a><a href="#s10"><span>10</span>The Confused Deputy</a><a href="#s11"><span>11</span>Fetching URLs and Running Local Servers</a><a href="#s12"><span>12</span>Sandbox, Approval, and Rules in Codex</a><a href="#s13"><span>13</span>Where Your Data Goes</a><a href="#s14"><span>14</span>Disclosing Agent Use</a><a href="#s15"><span>15</span>Summary</a></nav>
+  
+<article id="s01">
+  <header><span class="num">01</span><h2>The Agent Attack Surface</h2></header>
+  <p class="meta">Original slides 1 and 2.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>Last time we studied attacks on the model itself. Today we follow information through the software around the model. We start with MCP and see where attacks enter. Then we measure tool poisoning, study controls that check an action before it runs, and apply these ideas to your own project. Today we are going to study two questions. Where does untrusted text enter, and where can software stop a bad action?</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>上节课研究的是针对模型本身的攻击。今天沿着信息流，看模型外面的软件。先讲 MCP，看攻击从哪里进来；再测量工具投毒，学习在动作执行前检查它的控制措施，最后用到你们自己的项目上。今天研究两个问题：不可信文本从哪里进来？软件在哪里能拦住坏动作？</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Course synthesis.</p>
+</article>
+<article id="s02">
+  <header><span class="num">02</span><h2>How an Agent Reaches Its Tools</h2></header>
+  <p class="meta">Original slides 3 to 6.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>Most agents connect to tools through MCP. The host runs the application, its client talks to servers, and each server offers tools with names and descriptions. Follow the numbered steps. In step 3 the model reads the tool list, and in step 4 it picks a tool. This work finds 57 threats across five components. Each arrow is a place where one part trusts another. Next we look at the most common threat.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>大多数智能体通过 MCP 连接工具。宿主运行应用，客户端连接服务器，每个服务器提供带名称和描述的工具。沿编号看：第 3 步模型读取工具列表，第 4 步选择工具。这篇工作在五个组件中找到 57 类威胁。每个箭头都是一方信任另一方的地方。接下来看最常见的威胁。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Huang, Huang, Tran, Milani Fard, arXiv 2603.22489, 2026, Figure 1.</p>
+</article>
+<article id="s03">
+  <header><span class="num">03</span><h2>Tool Poisoning</h2></header>
+  <p class="meta">Original slides 7 and 9.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>The model reads every tool description before it picks a tool, so the description is a way in. This tool only adds two numbers, and its description hides a block that asks the model to read a private file and keep quiet. The user only asks to add 12 and 12. The user never sees the description, and the model always does. Invariant Labs first reported this in April 2025. So we treat a tool description as untrusted input. Next we see how the attack changes over time.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>模型选工具前会读所有工具描述，所以描述本身就是入口。这个工具只是两数相加，描述里却藏着一段话，让模型读取私密文件并且不要告诉用户。用户只想算 12 加 12。用户看不到描述，模型却一定会读。Invariant Labs 在 2025 年 4 月首先报告了这种攻击。所以工具描述要当作不可信输入。接下来看攻击怎样随时间变化。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> arXiv 2603.22489, Section 5.1.1. Invariant Labs, April 2025.</p>
+</article>
+<article id="s04">
+  <header><span class="num">04</span><h2>Rug Pulls and Shadowing</h2></header>
+  <p class="meta">Original slides 10 to 13.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>In a rug pull, the user approves a harmless server, and later the server changes its description. An old approval may not cover what the model reads today. In shadowing, one server's description changes how the agent uses another server's tool. Here a poisoned tool tells the agent to send every email to the attacker, and the trusted email tool does the sending. So we need to know where each rule came from. Next we ask how real clients handle these attacks.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>Rug pull 是用户先批准了一个无害服务器，之后服务器改掉了工具描述，过去的批准不一定覆盖模型现在读到的内容。Shadowing 是一个服务器的描述改变智能体使用另一个服务器工具的方式。例子中，投毒工具让智能体把所有邮件发给攻击者，真正发信的却是可信的邮件工具。所以要知道每条规则来自哪里。接下来看真实客户端表现如何。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Invariant Labs, April 2025, rug pull and shadowing illustrations.</p>
+</article>
+<article id="s05">
+  <header><span class="num">05</span><h2>How Real Clients Respond</h2></header>
+  <p class="meta">Original slide 8.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>The threat modeling work tests these attacks on seven clients. Each row is an attack, and each column is a client. Results vary a lot, and five of the seven clients do not validate tool descriptions before use. These are November 2025 versions, and newer ones may differ. So when your client, model, or settings change, you rerun the tests. Next we move to a benchmark.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>威胁建模这篇工作在七个客户端上测试了这些攻击。每行是一种攻击，每列是一个客户端。结果差别很大，七个里有五个在使用前不验证工具描述。这些是 2025 年 11 月的版本，新版本可能不同。所以客户端、模型或设置变了，就要重新测试。接下来看基准测试。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> arXiv 2603.22489, Table 19.</p>
+</article>
+<article id="s06">
+  <header><span class="num">06</span><h2>MCPTox</h2></header>
+  <p class="meta">Original slides 14 and 15.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>To see how often tool poisoning works, MCPTox builds a benchmark from 45 real servers, 353 tools, and 1,348 test cases. The agent does a normal task, and the attacker only changes one tool's metadata. The poisoned tool never needs to be called, because the model reads its description while picking other tools. Next we look at the results.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>为了知道工具投毒有多常成功，MCPTox 用 45 个真实服务器、353 个工具和 1,348 个测试案例建了基准。智能体做正常任务，攻击者只改一个工具的元数据。投毒工具根本不需要被调用，因为模型挑选其他工具时就读到了它的描述。接下来看结果。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Wang et al., AAAI 2026, Figure 2.</p>
+</article>
+<article id="s07">
+  <header><span class="num">07</span><h2>Which Attacks Work Best</h2></header>
+  <p class="meta">Original slides 16 and 17.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>A higher bar means a more successful attack. Several models are fooled more than 60% of the time, so a strong model is not automatically a safe one. In P3 the agent calls the right tool with the wrong arguments, and P3 succeeds most often. In our small sketch, the tool name passes the check and the recipient fails it. So we check the complete arguments. Next we ask how attackers find such inputs.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>柱子越高，攻击越成功。好几个模型超过 60% 的时候被骗，所以强模型不等于安全模型。P3 是工具选对了、参数被改了，它的成功率最高。在我们的小例子里，工具名通过检查，收件人却没通过。所以要检查完整参数。接下来看攻击者怎样找到这些输入。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> MCPTox, Figures 1b and 5. The code is our own example.</p>
+</article>
+<article id="s08">
+  <header><span class="num">08</span><h2>AgentVigil</h2></header>
+  <p class="meta">Original slides 31 to 33.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>AgentVigil generates attacks automatically. It mutates seed attacks, tries them on the agent through external data, scores the result, and uses a tree search to choose the next seeds. Removing good seeds or seed selection lowers coverage. An attacker that learns needs fewer tries, so we compare methods at the same budget. Next we turn to controls.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>AgentVigil 自动生成攻击：变异种子攻击，通过外部数据在智能体上尝试，给结果打分，再用树搜索选下一批种子。去掉好的初始种子或种子选择，覆盖率都会下降。会学习的攻击者需要的尝试更少，所以比较方法要在相同预算下。接下来讲控制措施。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Wang et al., Findings of EMNLP 2025, Figures 2 and 3.</p>
+</article>
+<article id="s09">
+  <header><span class="num">09</span><h2>What the Protocol Requires</h2></header>
+  <p class="meta">Original slides 18 to 20.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>Before a tool call runs, other software can still stop it. In the MCP specification, servers must validate inputs, control access, and sanitize outputs. Clients should ask before sensitive operations and let the user deny a call. Tool annotations are claims by the server, so they are untrusted unless the server is trusted. A rule on paper does not prove a client follows it, so we check what the implementation enforces. Next, failures without a model.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>工具调用执行前，外围软件还有机会拦住它。MCP 规范要求服务器必须验证输入、控制访问、清理输出；客户端应该在敏感操作前询问，并允许用户拒绝调用。工具注解是服务器自己的说法，除非服务器可信，否则不可信。纸面规则不代表客户端照做，所以要检查实现实际强制了什么。接下来看与模型无关的故障。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> MCP specification 2026-07-28, Tools, Security Considerations.</p>
+</article>
+<article id="s10">
+  <header><span class="num">10</span><h2>The Confused Deputy</h2></header>
+  <p class="meta">Original slides 21 and 22.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>A proxy server holds permissions the attacker lacks, and the attacker tricks it into using them. A stored consent cookie lets the request skip the consent screen, and the attacker ends up calling a third party API as the user. A better prompt cannot fix this. We fix the authorization code, for example by setting the consent cookie only after the user approves. Next, two more risks of this kind.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>代理服务器有攻击者没有的权限，攻击者骗它替自己使用这些权限。保存的同意 cookie 让请求跳过同意页面，最后攻击者以用户身份调用第三方 API。改提示词修不了这个问题，要改授权代码，比如只在用户同意后才设置同意 cookie。接下来再看两个同类风险。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> MCP Security Best Practices, Confused Deputy Problem.</p>
+</article>
+<article id="s11">
+  <header><span class="num">11</span><h2>Fetching URLs and Running Local Servers</h2></header>
+  <p class="meta">Original slides 23 and 24.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>In SSRF, a malicious server gives the client a URL to an internal address, and secrets leak back. The guide says to block private and reserved IP ranges. A local server is a program running on your machine with your permissions. Before installing one, check where it came from and what it can access. Next, how a coding agent limits access.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>SSRF 中，恶意服务器给客户端一个指向内部地址的 URL，机密信息就泄露回去。指南要求屏蔽私有和保留 IP 段。本地服务器是在你机器上用你的权限运行的程序。安装前要检查来源和它能访问什么。接下来看编程智能体怎样限制访问。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> MCP Security Best Practices, SSRF and Local MCP Server Compromise.</p>
+</article>
+<article id="s12">
+  <header><span class="num">12</span><h2>Sandbox, Approval, and Rules in Codex</h2></header>
+  <p class="meta">Original slides 26 to 28.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>Codex separates the sandbox, which limits what a command can reach, from the approval policy, which decides when to ask you. Rules match the start of a command and allow, prompt, or forbid it. In our sketch, viewing a pull request needs approval, and deleting data is forbidden. So we keep the workspace small and review actions that leave it. Next, your own project.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>Codex 把沙箱和审批策略分开：沙箱限制命令能接触什么，审批策略决定什么时候问你。规则匹配命令开头，决定允许、询问或禁止。在我们的小例子里，查看 PR 需要批准，删除数据被禁止。所以工作区要小，并检查超出范围的动作。接下来讲你们自己的项目。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> OpenAI Codex documentation, Agent approvals and security, and Rules. The code is our own sketch.</p>
+</article>
+<article id="s13">
+  <header><span class="num">13</span><h2>Where Your Data Goes</h2></header>
+  <p class="meta">Original slide 30.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>ARIS uses one model to write code and a model from another provider to review it. Its authors warn that a repository review may send source code to external APIs, and advise against it for code with secrets. Code, logs, data, and drafts can have different sharing rules. So list which service receives which material. Next, reporting agent use.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>ARIS 用一个模型写代码，用另一家公司的模型审查。作者提醒，仓库级审查可能把源代码发给外部 API，含机密的代码不要这样做。代码、日志、数据和草稿可能有不同的共享规则。所以要列出哪个服务收到哪些材料。接下来讲怎样报告智能体的使用。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> ARIS, arXiv 2605.03042, Section 5.2.</p>
+</article>
+<article id="s14">
+  <header><span class="num">14</span><h2>Disclosing Agent Use</h2></header>
+  <p class="meta">Original slide 29.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>Name the agent, model, versions, and skills. Say which sections and code the agent produced and who checked them. Record the data and code behind each figure, how references were checked, and keep the session log. The authors remain responsible for everything they submit. Now let's put the lecture together.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>写清智能体、模型、版本和技能；说明哪些章节和代码由智能体产生、谁检查过；记录每张图背后的数据和代码、参考文献怎样核实，并保留会话记录。作者对提交的一切内容负责。下面总结。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Course syllabus and ACL Policy on Publication Ethics.</p>
+</article>
+<article id="s15">
+  <header><span class="num">15</span><h2>Summary</h2></header>
+  <p class="meta">Original slide 34.</p>
+  <div class="cols">
+    <section class="en" lang="en"><h3>Script</h3><p>Tool descriptions and results are untrusted input. Attacks can choose the right tool with the wrong arguments, so check the complete call. Validation, authorization, sandboxes, and approvals limit what an action can reach. Logs and disclosure let others check what happened. Now we can answer our two questions.</p></section>
+    <section class="zh" lang="zh-CN"><h3>中文</h3><p>工具描述和工具结果都是不可信输入。攻击可以选对工具、改错参数，所以要检查完整调用。验证、授权、沙箱和审批限制动作能接触的范围。日志和披露让别人能核查发生了什么。现在可以回答开头的两个问题了。</p></section>
+  </div>
+  <p class="src"><span>Sources</span> Course synthesis.</p>
+</article>
+</div>
+<button class="theme" type="button" onclick="toggleTheme()">Light / Dark</button>
+<script>
+function toggleTheme() {
+  const r = document.documentElement;
+  const dark = r.dataset.theme ? r.dataset.theme === "dark"
+    : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("notes-theme", r.dataset.theme); } catch (e) {}
+}
+try { const t = localStorage.getItem("notes-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+</body>
+</html>
