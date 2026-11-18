@@ -14,18 +14,19 @@
       if (!page.searchParams.has("trace")) {
         page.searchParams.set("trace", "lecture_22");
       }
+      if (!page.searchParams.has("animate")) page.searchParams.set("animate", "1");
       history.replaceState(null, "", page);
     </script>
     <script type="module" crossorigin src="./assets/viewer-pages.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-CJlPj8BE.css">
-    <link rel="stylesheet" href="./lecture.css?v=20">
+    <link rel="stylesheet" href="./lecture.css?v=present1">
     <script defer src="./lecture.js?v=20"></script>
   </head>
   <body>
     <aside class="lecture-guide" aria-label="How to use these slides">
       <h1>Paper Reading, Peer Review, and Course Review</h1>
       <h2>How to use these slides</h2>
-      <p>Use <strong>Jump to section</strong> to browse. Select the sun icon to turn on step by step mode, then use <kbd>←</kbd> and <kbd>→</kbd> to reveal one bullet at a time. Upcoming text stays light gray.</p>
+      <p>Use <strong>Jump to section</strong> to browse. Step by step mode is on. Use <kbd>←</kbd> and <kbd>→</kbd> to reveal one bullet at a time. Upcoming text stays light gray.</p>
       <p>Click a figure to enlarge it and press <kbd>Esc</kbd> to close it. Section 07 runs a small Python calculation; its variables appear beside the code while those lines are active.</p>
     </aside>
     <div id="root"></div>
