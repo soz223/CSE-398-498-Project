@@ -45,9 +45,9 @@ def how_agents_reach_tools():
     text(card("mcpthreat"))
     text("- The **host** runs the application, and its **client** talks to one or more **servers**.")
     text("- Each server offers tools. Each tool comes with a name and a description.")
-    text(figure("images/l21_mcpthreat_fig1a.png", "MCP components with numbered steps between user, host, client, and server.", "mcpthreat", "MCP Threat Modeling, Figure 1, upper part. Follow the numbered steps."))
-    text("- In step 3, the model reads the server's tool list. In step 4, it picks a tool.")
-    text(figure("images/l21_mcpthreat_fig1b.png", "The model, the authorization server, and external data stores.", "mcpthreat", "MCP Threat Modeling, Figure 1, lower part."))
+    text(figure("images/l21_mcpthreat_fig1.png", "Complete MCP threat model with numbered interactions and trust boundaries.", "mcpthreat", "MCP Threat Modeling, Figure 1. Follow the numbered interactions.", width=620))
+    text("- Follow the request from the user through the host and client to the server.")
+    text("- The model also receives information about the tools. The server checks which resources the request can access.")
     text("The authors find **57 threats** across five components. Each arrow crosses a boundary where one part trusts another. Next we look at the most common threat.")
 
 
@@ -92,7 +92,7 @@ def mcptox():
     text("- It uses **45 real servers**, **353 tools**, and **1,348 test cases**.")
     text("- The agent carries out a normal task. The attacker only changes the metadata of one tool.")
     text("- The test checks whether the agent ends up following the attacker's goal.")
-    text(figure("images/l21_mcptox_fig2.png", "MCPTox pipeline with a poisoned security_check tool and three evaluation outcomes.", "mcptox", "MCPTox, Figure 2."))
+    text(figure("images/l21_mcptox_fig2.png", "MCPTox pipeline with a poisoned security_check tool and three evaluation outcomes.", "mcptox", "MCPTox, Figure 2.", width=620))
     text("The poisoned tool never needs to be called. The model reads its description while it picks other tools. Next we look at the results.")
 
 
@@ -140,9 +140,9 @@ def confused_deputy():
     text("Some attacks around agents do not involve the model at all. The MCP security guide describes a **confused deputy**.")
     text("- A proxy server holds permissions that the attacker lacks.")
     text("- The attacker tricks the proxy into using those permissions on the attacker's behalf.")
-    text(figure("images/l21_deputy_setup.png", "Sequence diagram where a consent cookie lets the request skip consent.", "mcpspec", "MCP Security Best Practices, confused deputy. A stored consent cookie lets the request skip the consent screen."))
+    text(figure("images/l21_deputy_setup.png", "Sequence diagram where a consent cookie lets the request skip consent.", "mcpspec", "MCP Security Best Practices, confused deputy. A stored consent cookie lets the request skip the consent screen.", width=560))
     text("- By the end, the attacker reaches a third party API **as the user**.")
-    text(figure("images/l21_deputy_attack.png", "Sequence diagram ending with the attacker impersonating the user.", "mcpspec", "MCP Security Best Practices, confused deputy, the rest of the attack."))
+    text(figure("images/l21_deputy_attack.png", "Sequence diagram ending with the attacker impersonating the user.", "mcpspec", "MCP Security Best Practices, confused deputy, the rest of the attack.", width=560))
     text("A better prompt cannot fix this. We fix it in the authorization code, for example by setting the consent cookie only after the user approves. Next we look at two more risks of this kind.")
 
 
