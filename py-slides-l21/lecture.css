@@ -194,3 +194,20 @@ body { display: block; }
 .code-container .markdown h2 { font-size: 1.45em; }
 .lesson-figure, .lesson-demo, .reference-card { font-size: clamp(16px, 1.15vw, 23px); }
 @media (max-width: 600px) { .renderings { width: calc(100% - 3em); } }
+
+.lines-panel .line {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: baseline;
+}
+.line > span:has(> .renderings) {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+}
+.line > span > .renderings {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
